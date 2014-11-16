@@ -42,7 +42,7 @@ order_json  = <<JSON
   ],
   "csv": [
     [ {"id": 1, "name": "name1"} ],
-    [ {"id": 2, "name": "name2"} ]
+    [ {"id": 2, "name": "name2"}, {"id": 22, "name": "name22"} ]
   ]
 }
 JSON
@@ -109,6 +109,16 @@ describe 'Ruby OJM Function' do
       expect(@order.comments[1].user.birthday).to be_nil
       expect(@order.comments[1].message).to eq 'this shop is bad!'
       expect(@order.comments[1].deleted).to eq true
+    end
+
+    it 'should parse csv info' do
+      expect(@order.csv[0][0].id).to eq 1
+      expect(@order.csv[0][0].name).to eq 'name1'
+
+      expect(@order.csv[1][0].id).to eq 2
+      expect(@order.csv[1][0].name).to eq 'name2'
+      expect(@order.csv[1][1].id).to eq 22
+      expect(@order.csv[1][1].name).to eq 'name22'
     end
   end
 end
