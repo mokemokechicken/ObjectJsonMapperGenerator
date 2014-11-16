@@ -4,6 +4,22 @@ module OJMGenerator
   module Ruby
 
     class JsonTypeRuby < JsonType
+      def self.convert_to_type(key, val)
+        if val.kind_of? Array
+          ArrayType.new key, val
+        elsif val == 'String'
+          StringType.new key, val
+        elsif val == 'Int'
+          IntegerType.new key, val
+        elsif val == 'Double'
+          DoubleType.new key, val
+        elsif val == 'Bool'
+          BoolType.new key, val
+        else
+          CustomType.new key, val
+        end
+      end
+
       def default_value_expression
         default_value.inspect
       end
@@ -32,12 +48,17 @@ module OJMGenerator
     end
 
     class ArrayType < JsonTypeRuby
+      def initialize(key, val)
+        super key, val
+        @generic_type = JsonTypeRuby::convert_to_type("#{@symbol}_inarray", val[0])
+      end
+
       def default_value
         []
       end
 
       def to_required_value_from(value_expression)
-          "#{value_expression}.to_a"
+          "#{value_expression}.to_a.map{|v| #{@generic_type.to_value_from('v')}}"
       end
     end
 
@@ -105,22 +126,6 @@ module OJMGenerator
     class RubyOJMGenerator < GeneratorBase
       @@indent_width = 2
 
-      def convert_to_type(key, val)
-        if val.kind_of? Array
-          ArrayType.new key, val
-        elsif val == 'String'
-          StringType.new key, val
-        elsif val == 'Int'
-          IntegerType.new key, val
-        elsif val == 'Double'
-          DoubleType.new key, val
-        elsif val == 'Bool'
-          BoolType.new key, val
-        else
-          CustomType.new key, val
-        end
-      end
-
       def with_namespace(namespace)
         outputln "module #{namespace}", 'end' do
           super namespace
@@ -134,7 +139,7 @@ module OJMGenerator
       def convert_attrs_to_types(attrs)
         ret = []
         attrs.each do |key, val|
-          ret << convert_to_type(key, val)
+          ret << JsonTypeRuby::convert_to_type(key, val)
         end
         ret
       end

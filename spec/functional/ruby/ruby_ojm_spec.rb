@@ -51,6 +51,7 @@ describe 'Ruby OJM Function' do
   end
 
   it 'Generated Syntax is OK' do
+    puts @code
     expect { eval(@code) }.not_to raise_error
   end
 
@@ -76,11 +77,6 @@ describe 'Ruby OJM Function' do
     end
 
     it 'should have collect items info' do
-      expected = [
-          {'name' => 'Book1', 'price' => 500, 'on_sale' => true},
-          {'name' => 'Book2', 'price' => 200, 'on_sale' => false},
-          {'name' => 'Book3', 'price' => 900}
-      ]
       expect(@order.items[0].name).to eq 'Book1'
       expect(@order.items[0].price).to eq 500
       expect(@order.items[0].on_sale).to eq true
@@ -95,10 +91,6 @@ describe 'Ruby OJM Function' do
     end
 
     it 'should have collect comments info' do
-      expected = [
-          {'user' => {'name' => 'who1'}, 'message' => 'this shop is good!'},
-          {'user' => {'name' => 'who2'}, 'message' => 'this shop is bad!', 'deleted' => true}
-      ]
       expect(@order.comments[0].user.name).to eq 'who1'
       expect(@order.comments[0].user.birthday).to be_nil
       expect(@order.comments[0].message).to eq 'this shop is good!'

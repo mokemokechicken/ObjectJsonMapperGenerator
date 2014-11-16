@@ -125,7 +125,15 @@ module OJMGenerator
           new_class_name = make_auto_generate_class_name class_name, key
           classes[new_class_name] = replace_attrs classes, new_class_name, val
           val = new_class_name
+        elsif val.kind_of? Array
+          raise 'Array can contain only 1 Type!' if val.size > 1
+          if val[0].kind_of? Hash
+            new_class_name = make_auto_generate_class_name class_name, key
+            classes[new_class_name] = replace_attrs classes, new_class_name, val[0]
+            val = [new_class_name]
+          end
         end
+
         new_attrs[key] = val
       end
       new_attrs
