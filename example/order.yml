@@ -1,0 +1,20 @@
+Item:
+  name: String
+  price: Int
+  on_sale?: Bool
+
+User:
+  name: String
+  birthday?: String
+
+Order:
+  user: User
+  items: [Item]
+  comments:
+    - user: User
+      message: String
+      deleted?: Bool
+  csv:
+    -
+      - id: Int
+        name: String

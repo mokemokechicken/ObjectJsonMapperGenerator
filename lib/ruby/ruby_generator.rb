@@ -127,7 +127,11 @@ module OJMGenerator
       @@indent_width = 2
 
       def with_namespace(namespace)
-        outputln "module #{namespace}", 'end' do
+        if namespace
+          outputln "module #{namespace}", 'end' do
+            super namespace
+          end
+        else
           super namespace
         end
       end
