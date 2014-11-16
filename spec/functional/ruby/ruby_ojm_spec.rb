@@ -69,7 +69,7 @@ describe 'Ruby OJM Function' do
     expect { MySpec::Order.new.from_json_hash(sample_json) }.not_to raise_error
   end
 
-  describe 'Order Parser' do
+  describe 'Order Decoder' do
     before do
       @order = MySpec::Order.new.from_json_hash(sample_json)
     end
@@ -120,6 +120,57 @@ describe 'Ruby OJM Function' do
       expect(@order.csv[1][1].id).to eq 22
       expect(@order.csv[1][1].name).to eq 'name22'
     end
+  end
+
+  describe 'Order Encoder' do
+    before do
+      @order = MySpec::Order.new.from_json_hash(sample_json)
+      @json = @order.to_json_hash
+      puts @json
+    end
+
+    it 'should have 3 items and 2 comments' do
+      expect(@json[:items].size).to eq 3
+      expect(@json[:comments].size).to eq 2
+    end
+
+    it 'should have collect user info' do
+      expect(@json[:user][:name]).to eq 'Ken Morishita'
+      expect(@json[:user][:birthday]).to eq '2011/11/11'
+    end
+
+    it 'should have collect items info' do
+      expect(@json[:items][0][:name]).to eq 'Book1'
+      expect(@json[:items][0][:price]).to eq 500
+      expect(@json[:items][0][:on_sale]).to eq true
+
+      expect(@json[:items][1][:name]).to eq 'Book2'
+      expect(@json[:items][1][:price]).to eq 200
+      expect(@json[:items][1][:on_sale]).to eq false
+
+      expect(@json[:items][2][:name]).to eq 'Book3'
+      expect(@json[:items][2][:price]).to eq 900
+      expect(@json[:items][2][:on_sale]).to be_nil
+    end
+
+    it 'should have collect comments info' do
+      expect(@json[:comments][0][:user][:name]).to eq 'who1'
+      expect(@json[:comments][0][:message]).to eq 'this shop is good!'
+      expect(@json[:comments][0][:deleted]).to be_nil
+
+      expect(@json[:comments][1][:user][:name]).to eq 'who2'
+      expect(@json[:comments][1][:message]).to eq 'this shop is bad!'
+      expect(@json[:comments][1][:deleted]).to eq true
+    end
+    it 'should parse csv info' do
+      expect(@json[:csv][0][0][:id]).to eq 1
+      expect(@json[:csv][0][0][:name]).to eq 'name1'
+      expect(@json[:csv][1][0][:id]).to eq 2
+      expect(@json[:csv][1][0][:name]).to eq 'name2'
+      expect(@json[:csv][1][1][:id]).to eq 22
+      expect(@json[:csv][1][1][:name]).to eq 'name22'
+    end
+
   end
 end
 
