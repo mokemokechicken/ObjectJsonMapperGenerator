@@ -1,5 +1,5 @@
 require 'rspec'
 
-$:.unshift File.expand_path("../../src", __FILE__)
+$:.unshift File.expand_path("../../lib", __FILE__)
 
 require 'ojm_genenrator'
