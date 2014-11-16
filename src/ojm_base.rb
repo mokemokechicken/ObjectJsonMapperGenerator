@@ -35,6 +35,7 @@ module OJMGenerator
     def initialize(opts={})
       @indent = 0
       @writer = opts[:writer] || STDOUT
+      @debug_output = opts[:debug_output] || STDERR
     end
 
     def incr_indent
@@ -50,7 +51,7 @@ module OJMGenerator
     end
 
     def dpp(s)
-      STDERR.puts s.inspect
+      @debug_output.puts s.inspect
     end
 
     def write(s)
