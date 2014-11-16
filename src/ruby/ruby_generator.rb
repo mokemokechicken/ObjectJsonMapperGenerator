@@ -194,6 +194,7 @@ module OJMGenerator
             end
             outputln line
           end
+          outputln 'self'
         end
       end
     end
