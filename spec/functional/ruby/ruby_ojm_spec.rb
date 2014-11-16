@@ -23,6 +23,11 @@ Order:
       deleted?: Bool
 YAML
 
+#csv:
+#    -
+#    - id: Int
+#name: String
+
 order_json  = <<JSON
 {
   "user": {"name": "Ken Morishita", "birthday": "2011/11/11"},
