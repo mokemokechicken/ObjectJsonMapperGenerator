@@ -60,7 +60,6 @@ describe 'Ruby OJM Function' do
   end
 
   it 'Generated Syntax is OK' do
-    puts @code
     expect { eval(@code) }.not_to raise_error
   end
 
@@ -126,7 +125,6 @@ describe 'Ruby OJM Function' do
     before do
       @order = MySpec::Order.new.from_json_hash(sample_json)
       @json = @order.to_json_hash
-      puts @json
     end
 
     it 'should have 3 items and 2 comments' do
