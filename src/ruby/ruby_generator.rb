@@ -1,5 +1,4 @@
 # coding: utf-8
-require_relative '../ojm_genenrator'
 
 module OJMGenerator
   module Ruby
