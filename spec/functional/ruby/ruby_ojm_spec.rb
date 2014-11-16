@@ -21,12 +21,12 @@ Order:
     - user: User
       message: String
       deleted?: Bool
+  csv:
+    -
+      - id: Int
+        name: String
 YAML
 
-#csv:
-#    -
-#    - id: Int
-#name: String
 
 order_json  = <<JSON
 {
@@ -39,6 +39,10 @@ order_json  = <<JSON
   "comments": [
     {"user": {"name": "who1"}, "message": "this shop is good!"},
     {"user": {"name": "who2"}, "message": "this shop is bad!", "deleted": true}
+  ],
+  "csv": [
+    [ {"id": 1, "name": "name1"} ],
+    [ {"id": 2, "name": "name2"} ]
   ]
 }
 JSON
