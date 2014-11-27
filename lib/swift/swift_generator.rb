@@ -20,21 +20,20 @@ module OJMGenerator
         end
       end
 
+      def type_expression
+        val
+      end
+
       def default_value_expression
         default_value.inspect
       end
 
       def to_hash_with(value_expression)
-        required_hash_expression = to_required_hash_with value_expression
-        if @optional
-          "(#{value_expression} == nil ? nil : #{required_hash_expression})"
-        else
-          required_hash_expression
-        end
+        to_required_hash_with value_expression
       end
 
       def to_required_hash_with(value_expression)
-        value_expression
+        "encode(#{value_expression})"
       end
 
       def to_value_from(value_expression)
@@ -53,8 +52,20 @@ module OJMGenerator
         @generic_type = JsonTypeSwift::convert_to_type("#{@symbol}_inarray", val[0])
       end
 
+      def type_expression
+        "[#{val[0]}]"
+      end
+
       def default_value
-        []
+        "#{type_expression}()"
+      end
+
+      def default_value_expression
+        default_value
+      end
+
+      def to_required_hash_with(value_expression)
+        "#{value_expression}.map { x in encode(x) }"
       end
 
       def to_required_value_from(value_expression)
@@ -68,11 +79,11 @@ module OJMGenerator
       end
 
       def default_value_expression
-        "''"
+        '""'
       end
 
       def to_required_value_from(value_expression)
-        "#{value_expression}.to_s"
+        "#{value_expression} as String"
       end
     end
 
@@ -82,7 +93,7 @@ module OJMGenerator
       end
 
       def to_required_value_from(value_expression)
-        "#{value_expression}.to_i"
+        "#{value_expression} as Int"
       end
     end
 
@@ -92,7 +103,7 @@ module OJMGenerator
       end
 
       def to_required_value_from(value_expression)
-        "#{value_expression}.to_f"
+        "#{value_expression} as Double"
       end
     end
 
@@ -102,29 +113,29 @@ module OJMGenerator
       end
 
       def to_required_value_from(value_expression)
-        "(#{value_expression} ? true : false)"
+        "#{value_expression} as Bool"
       end
     end
 
     class CustomType < JsonTypeSwift
       def initialize(key, val)
         super(key, val)
-        @class_name = val
+        @class_name = type_expression
       end
 
       def default_value_expression
-        "#{@class_name}.new"
+        "#{@class_name}()"
       end
 
       def to_required_value_from(value_expression)
-        "#{@class_name}.new.from_json_hash(#{value_expression})"
+        "#{@class_name}(#{value_expression})"
       end
     end
 
     ##########################################################
 
     class SwiftOJMGenerator < GeneratorBase
-      @@indent_width = 2
+      @@indent_width = 4
 
       def with_namespace(namespace)
         if namespace
@@ -137,7 +148,7 @@ module OJMGenerator
       end
 
       def output_common_functions
-        outputln File.read(File.expand_path('../swift_common_scripts.rb', __FILE__)).split /\n/
+        outputln File.read(File.expand_path('../swift_common_scripts.swift', __FILE__)).split /\n/
       end
 
       def convert_attrs_to_types(attrs)
@@ -152,11 +163,8 @@ module OJMGenerator
       def create_class(class_name, attrs)
         dpp attrs
         types =  convert_attrs_to_types attrs
-        outputln "class #{class_name} < JsonGenEntityBase", 'end' do
-          # accessor
-          outputln 'attr_accessor ' + types.map {|t| ":#{t.key}"}. join(', ')
-          new_line
-          make_constructor types
+        outputln "class #{class_name} : JsonGenEntityBase {", '}' do
+          make_member_variables types
           new_line
           make_to_json types
           new_line
@@ -164,31 +172,23 @@ module OJMGenerator
         end
       end
 
-      def make_constructor(types)
-        outputln 'def initialize', 'end' do
-          types.each do |value_type|
-            if value_type.optional
-              outputln "@#{value_type.key} = nil"
-            else
-              outputln "@#{value_type.key} = #{value_type.default_value_expression}"
-            end
-          end
+      def make_member_variables(types)
+        types.each do |t|
+          outputln "var #{t.key}: #{t.type_expression} = #{t.default_value_expression}"
         end
       end
 
+      # @param types Array<JsonTypeSwift>
       def make_to_json(types)
-        outputln 'def to_json_hash', 'end' do
-          outputln 'hash = {}'
-          types.each do |value_type|
-            value_expression = "@#{value_type.key}"
-            convert_expression = value_type.to_hash_with value_expression
-            line = "hash[:#{value_type.key}] = #{convert_expression}"
-            if value_type.optional
-              line += " unless @#{value_type.key} == nil"
-            end
+        outputln 'override func toJsonDictionary() -> NSDictionary {', '}' do
+          outputln 'var hash = NSMutableDictionary()'
+          types.each do |t|
+            value_expression = "self.#{t.key}"
+            convert_expression = t.to_hash_with value_expression
+            line = "hash[\"#{t.key}\"] = #{convert_expression}"
             outputln line
           end
-          outputln 'encode(hash)'
+          outputln 'return hash'
         end
       end
 

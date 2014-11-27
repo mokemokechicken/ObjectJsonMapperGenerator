@@ -8,16 +8,9 @@ authors: [Author]
 title: String
 note?: String
 option:
-hoge?: String
-hara?: Bool
+  hoge?: String
+  hara?: Bool
 */
-
-var x : [AnyObject?] = [1,2, nil]
-var aa = NSArray(array: [1,2,3])
-
-for a in aa {
-    println("\(a)")
-}
 
 private func encode(obj: AnyObject?) -> AnyObject {
     switch obj {
@@ -39,6 +32,20 @@ private func decodeOptional(obj: AnyObject?) -> AnyObject? {
     
     default:
         return obj
+    }
+}
+
+class Base {
+    convenience init(hash: NSDictionary) {
+        self.init()
+        self.fromJsonDictionary(hash)
+    }
+
+    func toJsonDictionary() -> NSDictionary {
+        return NSDictionary()
+    }
+
+    func fromJsonDictionary(hash: NSDictionary) {
     }
 }
 
@@ -76,19 +83,6 @@ class Book : Base {
 }
 
 
-class Base {
-    convenience init(hash: NSDictionary) {
-        self.init()
-        self.fromJsonDictionary(hash)
-    }
-
-    func toJsonDictionary() -> NSDictionary {
-        return NSDictionary()
-    }
-    
-    func fromJsonDictionary(hash: NSDictionary) {
-    }
-}
 
 class Author : Base {
 }
