@@ -1,9 +1,9 @@
 # coding: utf-8
 
 module OJMGenerator
-  module Ruby
+  module Swift
 
-    class JsonTypeRuby < JsonType
+    class JsonTypeSwift < JsonType
       def self.convert_to_type(key, val)
         if val.kind_of? Array
           ArrayType.new key, val
@@ -47,10 +47,10 @@ module OJMGenerator
       end
     end
 
-    class ArrayType < JsonTypeRuby
+    class ArrayType < JsonTypeSwift
       def initialize(key, val)
         super key, val
-        @generic_type = JsonTypeRuby::convert_to_type("#{@symbol}_inarray", val[0])
+        @generic_type = JsonTypeSwift::convert_to_type("#{@symbol}_inarray", val[0])
       end
 
       def default_value
@@ -62,7 +62,7 @@ module OJMGenerator
       end
     end
 
-    class StringType < JsonTypeRuby
+    class StringType < JsonTypeSwift
       def default_value
         ''
       end
@@ -76,7 +76,7 @@ module OJMGenerator
       end
     end
 
-    class IntegerType < JsonTypeRuby
+    class IntegerType < JsonTypeSwift
       def default_value
         0
       end
@@ -86,7 +86,7 @@ module OJMGenerator
       end
     end
 
-    class DoubleType < JsonTypeRuby
+    class DoubleType < JsonTypeSwift
       def default_value
         0
       end
@@ -96,7 +96,7 @@ module OJMGenerator
       end
     end
 
-    class BoolType < JsonTypeRuby
+    class BoolType < JsonTypeSwift
       def default_value
         false
       end
@@ -106,7 +106,7 @@ module OJMGenerator
       end
     end
 
-    class CustomType < JsonTypeRuby
+    class CustomType < JsonTypeSwift
       def initialize(key, val)
         super(key, val)
         @class_name = val
@@ -123,7 +123,7 @@ module OJMGenerator
 
     ##########################################################
 
-    class RubyOJMGenerator < GeneratorBase
+    class SwiftOJMGenerator < GeneratorBase
       @@indent_width = 2
 
       def with_namespace(namespace)
@@ -137,18 +137,18 @@ module OJMGenerator
       end
 
       def output_common_functions
-        outputln File.read(File.expand_path('../ruby_common_scripts.rb', __FILE__)).split /\n/
+        outputln File.read(File.expand_path('../swift_common_scripts.rb', __FILE__)).split /\n/
       end
 
       def convert_attrs_to_types(attrs)
         ret = []
         attrs.each do |key, val|
-          ret << JsonTypeRuby::convert_to_type(key, val)
+          ret << JsonTypeSwift::convert_to_type(key, val)
         end
         ret
       end
 
-      # For Ruby
+      # For Swift
       def create_class(class_name, attrs)
         dpp attrs
         types =  convert_attrs_to_types attrs
