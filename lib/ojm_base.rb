@@ -27,12 +27,9 @@ module OJMGenerator
     end
   end
 
-  class GeneratorBase
-    include Common
-
-    @@indent_width = 4
-
-    def initialize(opts={})
+  module OutputFormatter
+    def initialize_formatter(opts={})
+      @indent_width = 4
       @indent = 0
       @writer = opts[:writer] || STDOUT
       @debug_output = opts[:debug_output] || STDERR
@@ -64,7 +61,7 @@ module OJMGenerator
           outputln line
         end
       else
-        write((' ' * (@indent * @@indent_width)) + s.to_s)
+        write((' ' * (@indent * @indent_width)) + s.to_s)
       end
     end
 
@@ -81,6 +78,30 @@ module OJMGenerator
         decr_indent
         outputln after_block if after_block
       end
+    end
+  end
+
+  class BufferedOutputFormatter
+    attr_accessor :string_array
+
+    include OutputFormatter
+    def initialize(opts={})
+      @string_array = []
+      initialize_formatter opts
+    end
+
+    def write(s)
+      @string_array << s
+    end
+  end
+
+  class GeneratorBase
+    include Common
+    include OutputFormatter
+
+    def initialize(opts={})
+      initialize_formatter opts
+      @indent_width = 4
     end
 
     # @param [Hash] def_hash

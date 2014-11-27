@@ -69,7 +69,11 @@ module OJMGenerator
       end
 
       def to_required_value_from(value_expression)
-          "#{value_expression}.to_a.map{|v| #{@generic_type.to_value_from('v')}}"
+        out = BufferedOutputFormatter.new
+        out.outputln "if let xx = #{value_expression} as? NSArray {", '}' do
+
+        end
+        out.string_array
       end
     end
 
@@ -135,7 +139,11 @@ module OJMGenerator
     ##########################################################
 
     class SwiftOJMGenerator < GeneratorBase
-      @@indent_width = 4
+      def initialize(opts = {})
+        super(opts)
+        @indent_width = 4
+      end
+
 
       def with_namespace(namespace)
         if namespace
@@ -197,13 +205,13 @@ module OJMGenerator
           types.each do |value_type|
             value_expression = "hash['#{value_type.key}']"
             convert_expression = value_type.to_value_from(value_expression)
-            line = "@#{value_type.key} = #{convert_expression}"
-            if value_type.optional
-              line += " if hash.include? '#{value_type.key}'"
+            if convert_expression.kind_of? Array
+              p convert_expression
+              outputln convert_expression
+            else
+              outputln "@#{value_type.key} = #{convert_expression}"
             end
-            outputln line
           end
-          outputln 'self'
         end
       end
     end
