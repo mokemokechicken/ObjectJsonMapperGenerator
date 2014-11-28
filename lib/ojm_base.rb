@@ -88,10 +88,16 @@ module OJMGenerator
     def initialize(opts={})
       @string_array = []
       initialize_formatter opts
+      @line = ''
     end
 
     def write(s)
-      @string_array << s
+      @line += s
+    end
+
+    def new_line
+      @string_array << @line
+      @line = ''
     end
   end
 

@@ -206,7 +206,6 @@ module OJMGenerator
             value_expression = "hash['#{value_type.key}']"
             convert_expression = value_type.to_value_from(value_expression)
             if convert_expression.kind_of? Array
-              p convert_expression
               outputln convert_expression
             else
               outputln "@#{value_type.key} = #{convert_expression}"
