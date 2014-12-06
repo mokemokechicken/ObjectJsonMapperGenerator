@@ -8,5 +8,5 @@ echo > a.swift
 cat OJM.swift >> a.swift
 cat run_book.swift >> a.swift
 
-xcrun swift -I . -sdk $(xcrun --show-sdk-path --sdk macosx) a.swift
+xcrun swift -I . -sdk $(xcrun --show-sdk-path --sdk macosx) a.swift ../example/book.json
 

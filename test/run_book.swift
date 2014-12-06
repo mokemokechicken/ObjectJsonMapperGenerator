@@ -1,4 +1,16 @@
+import Foundation
 
-Book()
+let args = Process.arguments
 
-print(10)
+let filename = args[1]
+
+var data = NSData(contentsOfFile: filename)!
+
+var hash = NSJSONSerialization.JSONObjectWithData(data, options:NSJSONReadingOptions.MutableContainers, error: nil) as NSDictionary
+
+if let book = Book.fromJsonDictionary(hash) {
+    println("\(book.toJsonDictionary())")
+} else {
+    println("JSON parse error")
+}
+
