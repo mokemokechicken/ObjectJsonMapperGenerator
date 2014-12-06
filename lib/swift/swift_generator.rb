@@ -203,7 +203,7 @@ module OJMGenerator
       def create_class(class_name, attrs)
         dpp attrs
         types =  convert_attrs_to_types attrs
-        outputln "class #{class_name} : JsonGenEntityBase {", '}' do
+        outputln "public class #{class_name} : JsonGenEntityBase {", '}' do
           make_member_variables types
           new_line
           make_to_json types
@@ -224,7 +224,7 @@ module OJMGenerator
 
       # @param types Array<JsonTypeSwift>
       def make_to_json(types)
-        outputln 'override func toJsonDictionary() -> NSDictionary {', '}' do
+        outputln 'public override func toJsonDictionary() -> NSDictionary {', '}' do
           outputln 'var hash = NSMutableDictionary()'
           types.each do |t|
             value_expression = "self.#{t.key}"
@@ -237,7 +237,7 @@ module OJMGenerator
       end
 
       def make_from_json(class_name, types)
-        outputln "override class func fromJsonDictionary(hash: NSDictionary?) -> #{class_name}? {", '}' do
+        outputln "public override class func fromJsonDictionary(hash: NSDictionary?) -> #{class_name}? {", '}' do
           outputln 'if let h = hash {', '} else {' do
             outputln "var this = #{class_name}()"
             types.each do |value_type|

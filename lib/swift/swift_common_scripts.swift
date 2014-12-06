@@ -23,12 +23,16 @@ private func decodeOptional(obj: AnyObject?) -> AnyObject? {
     }
 }
 
-class JsonGenEntityBase {
-    func toJsonDictionary() -> NSDictionary {
+public class JsonGenEntityBase {
+    public init() {
+
+    }
+
+    public func toJsonDictionary() -> NSDictionary {
         return NSDictionary()
     }
 
-    class func fromJsonDictionary(hash: NSDictionary?) -> JsonGenEntityBase? {
+    public class func fromJsonDictionary(hash: NSDictionary?) -> JsonGenEntityBase? {
         return nil
     }
 }

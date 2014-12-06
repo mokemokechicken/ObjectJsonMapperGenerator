@@ -23,28 +23,32 @@ private func decodeOptional(obj: AnyObject?) -> AnyObject? {
     }
 }
 
-class JsonGenEntityBase {
-    func toJsonDictionary() -> NSDictionary {
+public class JsonGenEntityBase {
+    public init() {
+
+    }
+
+    public func toJsonDictionary() -> NSDictionary {
         return NSDictionary()
     }
 
-    class func fromJsonDictionary(hash: NSDictionary?) -> JsonGenEntityBase? {
+    public class func fromJsonDictionary(hash: NSDictionary?) -> JsonGenEntityBase? {
         return nil
     }
 }
 
-class Book_option : JsonGenEntityBase {
+public class Book_option : JsonGenEntityBase {
     var hoge: String?
     var hara: Bool?
 
-    override func toJsonDictionary() -> NSDictionary {
+    public override func toJsonDictionary() -> NSDictionary {
         var hash = NSMutableDictionary()
         hash["hoge"] = encode(self.hoge)
         hash["hara"] = encode(self.hara)
         return hash
     }
 
-    override class func fromJsonDictionary(hash: NSDictionary?) -> Book_option? {
+    public override class func fromJsonDictionary(hash: NSDictionary?) -> Book_option? {
         if let h = hash {
             var this = Book_option()
             this.hoge = h["hoge"] as? String
@@ -56,7 +60,7 @@ class Book_option : JsonGenEntityBase {
     }
 }
 
-class Book : JsonGenEntityBase {
+public class Book : JsonGenEntityBase {
     var authors: [Author] = [Author]()
     var title: String = ""
     var year: Int = 0
@@ -64,7 +68,7 @@ class Book : JsonGenEntityBase {
     var price: Double = 0
     var option: Book_option?
 
-    override func toJsonDictionary() -> NSDictionary {
+    public override func toJsonDictionary() -> NSDictionary {
         var hash = NSMutableDictionary()
         hash["authors"] = encode(self.authors)
         hash["title"] = encode(self.title)
@@ -75,7 +79,7 @@ class Book : JsonGenEntityBase {
         return hash
     }
 
-    override class func fromJsonDictionary(hash: NSDictionary?) -> Book? {
+    public override class func fromJsonDictionary(hash: NSDictionary?) -> Book? {
         if let h = hash {
             var this = Book()
             if let xx = h["authors"] as? [NSDictionary] {
@@ -117,18 +121,18 @@ class Book : JsonGenEntityBase {
     }
 }
 
-class Author : JsonGenEntityBase {
+public class Author : JsonGenEntityBase {
     var name: String = ""
     var others: [Book]?
 
-    override func toJsonDictionary() -> NSDictionary {
+    public override func toJsonDictionary() -> NSDictionary {
         var hash = NSMutableDictionary()
         hash["name"] = encode(self.name)
         hash["others"] = encode(self.others)
         return hash
     }
 
-    override class func fromJsonDictionary(hash: NSDictionary?) -> Author? {
+    public override class func fromJsonDictionary(hash: NSDictionary?) -> Author? {
         if let h = hash {
             var this = Author()
             if let x = h["name"] as? String {

@@ -1,0 +1,8 @@
+{
+  "authors": [{"name": "Ada"}, {"name": "panda", "others": []}],
+  "title": "Book title",
+  "year": 1999,
+  "note": "death note",
+  "price": 2.99,
+  "option": {"hoge": "fuga"}
+}
