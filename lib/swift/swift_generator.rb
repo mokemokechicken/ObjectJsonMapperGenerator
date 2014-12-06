@@ -36,13 +36,8 @@ module OJMGenerator
         "encode(#{value_expression})"
       end
 
-      def to_value_from(value_expression)
-        required_value_convert_expression = to_required_value_from value_expression
-        if @optional
-          "(#{value_expression} == nil ? nil : #{required_value_convert_expression})"
-        else
-          required_value_convert_expression
-        end
+      def to_value_from(variable_expression, value_expression)
+        to_required_value_from variable_expression, value_expression
       end
     end
 
@@ -68,7 +63,7 @@ module OJMGenerator
         "#{value_expression}.map { x in encode(x) }"
       end
 
-      def to_required_value_from(value_expression)
+      def to_required_value_from(variable_expression, value_expression)
         out = BufferedOutputFormatter.new
         out.outputln "if let xx = #{value_expression} as? NSArray {", '}' do
 
@@ -86,8 +81,15 @@ module OJMGenerator
         '""'
       end
 
-      def to_required_value_from(value_expression)
-        "#{value_expression} as String"
+      def to_required_value_from(variable_expression, value_expression)
+        out = BufferedOutputFormatter.new
+        out.outputln "if let x = #{value_expression} as? String {", '} else {' do
+          out << "#{variable_expression} = x"
+        end
+        out.outputln nil, '}' do
+          out << 'return nil'
+        end
+        out.string_array
       end
     end
 
@@ -96,7 +98,7 @@ module OJMGenerator
         0
       end
 
-      def to_required_value_from(value_expression)
+      def to_required_value_from(variable_expression, value_expression)
         "#{value_expression} as Int"
       end
     end
@@ -106,7 +108,7 @@ module OJMGenerator
         0
       end
 
-      def to_required_value_from(value_expression)
+      def to_required_value_from(variable_expression, value_expression)
         "#{value_expression} as Double"
       end
     end
@@ -116,7 +118,7 @@ module OJMGenerator
         false
       end
 
-      def to_required_value_from(value_expression)
+      def to_required_value_from(variable_expression, value_expression)
         "#{value_expression} as Bool"
       end
     end
@@ -131,7 +133,7 @@ module OJMGenerator
         "#{@class_name}()"
       end
 
-      def to_required_value_from(value_expression)
+      def to_required_value_from(variable_expression, value_expression)
         "#{@class_name}(#{value_expression})"
       end
     end
@@ -176,7 +178,7 @@ module OJMGenerator
           new_line
           make_to_json types
           new_line
-          make_from_json types
+          make_from_json class_name, types
         end
       end
 
@@ -200,16 +202,13 @@ module OJMGenerator
         end
       end
 
-      def make_from_json(types)
-        outputln 'def from_json_hash(hash)', 'end' do
+      def make_from_json(class_name, types)
+        outputln "class func fromJsonDictionary(hash: NSDictionary) -> #{class_name}?", 'end' do
+          outputln "var this = #{class_name}()"
           types.each do |value_type|
             value_expression = "hash['#{value_type.key}']"
-            convert_expression = value_type.to_value_from(value_expression)
-            if convert_expression.kind_of? Array
-              outputln convert_expression
-            else
-              outputln "@#{value_type.key} = #{convert_expression}"
-            end
+            variable_expression = "this.#{value_type.key}"
+            outputln value_type.to_value_from(variable_expression, value_expression)
           end
         end
       end

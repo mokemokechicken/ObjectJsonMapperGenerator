@@ -36,16 +36,11 @@ private func decodeOptional(obj: AnyObject?) -> AnyObject? {
 }
 
 class Base {
-    convenience init(hash: NSDictionary) {
-        self.init()
-        self.fromJsonDictionary(hash)
-    }
-
     func toJsonDictionary() -> NSDictionary {
         return NSDictionary()
     }
 
-    func fromJsonDictionary(hash: NSDictionary) {
+    class func fromJsonDictionary(hash: NSDictionary) -> Base? {
     }
 }
 
@@ -54,7 +49,7 @@ class Book : Base {
     var authors: [Author] = [Author]()
     var title: String = ""
     var note: String?
-    var option: Book_0 = Book_0()
+    var option: Book_0?
     
     class Book_0 : Base {
         var hoge: String?
@@ -70,15 +65,23 @@ class Book : Base {
         return hash
     }
     
-    override func fromJsonDictionary(hash: NSDictionary) {
-        if let xx = hash["authors"] as? NSArray {
-            for x in xx as [NSDictionary] {
-                self.authors.append(Author(hash: x))
+    override class func fromJsonDictionary(hash: NSDictionary) -> Book? {
+        val this = Book()
+        if let xx = hash["authors"] as? [NSDictionary] {
+            for x in xx {
+                if let obj = Author.fromJsonDictionary(hash: x) {
+                    this.authors.append(obj)
+                } else {
+                    return nil
+                }
             }
+        } else {
+            return nil
         }
-        self.title = hash["title"] as String
-        self.note = decodeOptional(hash["note"]) as? String
-        self.option.fromJsonDictionary(hash["option"] as NSDictionary)
+        this.title = hash["title"] as String
+        this.note = decodeOptional(hash["note"]) as? String
+        this.option = Book_0.fromJsonDictionary(hash["option"] as NSDictionary)
+        return this
     }
 }
 

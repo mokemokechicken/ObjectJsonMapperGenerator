@@ -36,16 +36,11 @@ private func decodeOptional(obj: AnyObject?) -> AnyObject? {
 }
 
 class JsonGenEntityBase {
-    convenience init(hash: NSDictionary) {
-        self.init()
-        self.fromJsonDictionary(hash)
-    }
-
     func toJsonDictionary() -> NSDictionary {
         return NSDictionary()
     }
 
-    func fromJsonDictionary(hash: NSDictionary) {
+    class func fromJsonDictionary(hash: NSDictionary) -> JsonGenEntityBase? {
     }
 }
 

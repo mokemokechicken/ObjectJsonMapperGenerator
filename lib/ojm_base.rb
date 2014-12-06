@@ -70,8 +70,11 @@ module OJMGenerator
     end
 
     def outputln(s='', after_block=nil)
-      output s
-      new_line
+      if s != nil
+        output s
+        new_line
+      end
+
       if block_given?
         incr_indent
         yield
@@ -79,6 +82,8 @@ module OJMGenerator
         outputln after_block if after_block
       end
     end
+
+    alias_method :<<, :outputln
   end
 
   class BufferedOutputFormatter
