@@ -37,7 +37,26 @@ module OJMGenerator
       end
 
       def to_value_from(variable_expression, value_expression)
-        to_required_value_from variable_expression, value_expression
+        if @optional
+          to_optional_value_from variable_expression, value_expression
+        else
+          to_required_value_from variable_expression, value_expression
+        end
+      end
+
+      def to_optional_value_from(variable_expression, value_expression)
+        "#{variable_expression} = #{value_expression} as? #{type_expression}"
+      end
+
+      def to_required_value_from(variable_expression, value_expression)
+        out = BufferedOutputFormatter.new
+        out.outputln "if let x = #{value_expression} as? #{type_expression} {", '} else {' do
+          out << "#{variable_expression} = x"
+        end
+        out.outputln nil, '}' do
+          out << 'return nil'
+        end
+        out.string_array
       end
     end
 
@@ -59,14 +78,36 @@ module OJMGenerator
         default_value
       end
 
-      def to_required_hash_with(value_expression)
-        "#{value_expression}.map { x in encode(x) }"
+      def to_optional_value_from(variable_expression, value_expression)
+        out = BufferedOutputFormatter.new
+        out.outputln "if let xx = #{value_expression} as? [NSDictionary] {", '}' do
+          out << "#{variable_expression} = #{default_value_expression}"
+          out.outputln 'for x in xx {', '}' do
+            out.outputln "if let obj = #{val[0]}.fromJsonDictionary(x) {", '} else {' do
+              out << "#{variable_expression}!.append(obj)"
+            end
+            out.outputln nil, '}' do
+              out << 'return nil'
+            end
+          end
+        end
+        out.string_array
       end
 
       def to_required_value_from(variable_expression, value_expression)
         out = BufferedOutputFormatter.new
-        out.outputln "if let xx = #{value_expression} as? NSArray {", '}' do
-
+        out.outputln "if let xx = #{value_expression} as? [NSDictionary] {", '} else {' do
+          out.outputln 'for x in xx {', '}' do
+            out.outputln "if let obj = #{val[0]}.fromJsonDictionary(x) {", '} else {' do
+              out << "#{variable_expression}.append(obj)"
+            end
+            out.outputln nil, '}' do
+              out << 'return nil'
+            end
+          end
+        end
+        out.outputln nil, '}' do
+          out << 'return nil'
         end
         out.string_array
       end
@@ -81,25 +122,11 @@ module OJMGenerator
         '""'
       end
 
-      def to_required_value_from(variable_expression, value_expression)
-        out = BufferedOutputFormatter.new
-        out.outputln "if let x = #{value_expression} as? String {", '} else {' do
-          out << "#{variable_expression} = x"
-        end
-        out.outputln nil, '}' do
-          out << 'return nil'
-        end
-        out.string_array
-      end
     end
 
     class IntegerType < JsonTypeSwift
       def default_value
         0
-      end
-
-      def to_required_value_from(variable_expression, value_expression)
-        "#{value_expression} as Int"
       end
     end
 
@@ -107,19 +134,11 @@ module OJMGenerator
       def default_value
         0
       end
-
-      def to_required_value_from(variable_expression, value_expression)
-        "#{value_expression} as Double"
-      end
     end
 
     class BoolType < JsonTypeSwift
       def default_value
         false
-      end
-
-      def to_required_value_from(variable_expression, value_expression)
-        "#{value_expression} as Bool"
       end
     end
 
@@ -133,8 +152,19 @@ module OJMGenerator
         "#{@class_name}()"
       end
 
+      def to_optional_value_from(variable_expression, value_expression)
+        "#{variable_expression} = #{type_expression}.fromJsonDictionary(#{value_expression} as? NSDictionary)"
+      end
+
       def to_required_value_from(variable_expression, value_expression)
-        "#{@class_name}(#{value_expression})"
+        out = BufferedOutputFormatter.new
+        out.outputln "if let x = #{type_expression}.fromJsonDictionary(#{value_expression} as? NSDictionary) {", '} else {' do
+          out << "#{variable_expression} = x"
+        end
+        out.outputln nil, '}' do
+          out << 'return nil'
+        end
+        out.string_array
       end
     end
 
@@ -184,7 +214,11 @@ module OJMGenerator
 
       def make_member_variables(types)
         types.each do |t|
-          outputln "var #{t.key}: #{t.type_expression} = #{t.default_value_expression}"
+          if t.optional
+            outputln "var #{t.key}: #{t.type_expression}?"
+          else
+            outputln "var #{t.key}: #{t.type_expression} = #{t.default_value_expression}"
+          end
         end
       end
 
@@ -203,15 +237,22 @@ module OJMGenerator
       end
 
       def make_from_json(class_name, types)
-        outputln "class func fromJsonDictionary(hash: NSDictionary) -> #{class_name}?", 'end' do
-          outputln "var this = #{class_name}()"
-          types.each do |value_type|
-            value_expression = "hash['#{value_type.key}']"
-            variable_expression = "this.#{value_type.key}"
-            outputln value_type.to_value_from(variable_expression, value_expression)
+        outputln "override class func fromJsonDictionary(hash: NSDictionary?) -> #{class_name}? {", '}' do
+          outputln 'if let h = hash {', '} else {' do
+            outputln "var this = #{class_name}()"
+            types.each do |value_type|
+              value_expression = "h[\"#{value_type.key}\"]"
+              variable_expression = "this.#{value_type.key}"
+              outputln value_type.to_value_from(variable_expression, value_expression)
+            end
+            outputln 'return this'
+          end
+          outputln nil, '}' do
+            outputln 'return nil'
           end
         end
       end
+
     end
   end
 end

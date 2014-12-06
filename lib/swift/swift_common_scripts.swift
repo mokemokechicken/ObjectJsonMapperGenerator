@@ -1,23 +1,11 @@
-// Playground - noun: a place where people can play
-
-import UIKit
-
-/*
-Book:
-authors: [Author]
-title: String
-note?: String
-option:
-  hoge?: String
-  hara?: Bool
-*/
+import Foundation
 
 private func encode(obj: AnyObject?) -> AnyObject {
     switch obj {
     case nil:
         return NSNull()
         
-    case let ojmObject as Base:
+    case let ojmObject as JsonGenEntityBase:
         return ojmObject.toJsonDictionary()
         
     default:
@@ -40,7 +28,7 @@ class JsonGenEntityBase {
         return NSDictionary()
     }
 
-    class func fromJsonDictionary(hash: NSDictionary) -> JsonGenEntityBase? {
+    class func fromJsonDictionary(hash: NSDictionary?) -> JsonGenEntityBase? {
+        return nil
     }
 }
-
