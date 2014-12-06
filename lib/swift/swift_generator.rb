@@ -28,12 +28,20 @@ module OJMGenerator
         default_value.inspect
       end
 
-      def to_hash_with(value_expression)
-        to_required_hash_with value_expression
+      def to_hash_with(variable_expression, value_expression)
+        if @optional
+          out = BufferedOutputFormatter.new
+          out.outputln "if let x = #{value_expression} {", '}' do
+            out.outputln to_required_hash_with variable_expression, 'x'
+          end
+          out.string_array
+        else
+          to_required_hash_with variable_expression, value_expression
+        end
       end
 
-      def to_required_hash_with(value_expression)
-        "encode(#{value_expression})"
+      def to_required_hash_with(variable_expression, value_expression)
+        "#{variable_expression} = encode(#{value_expression})"
       end
 
       def to_value_from(variable_expression, value_expression)
@@ -79,8 +87,8 @@ module OJMGenerator
         default_value
       end
 
-      def to_required_hash_with(value_expression)
-        "#{value_expression}.map {x in encode(x)}"
+      def to_required_hash_with(variable_expression, value_expression)
+        "#{variable_expression} = #{value_expression}.map {x in encode(x)}"
       end
 
       def to_optional_value_from(variable_expression, value_expression)
@@ -155,6 +163,10 @@ module OJMGenerator
 
       def default_value_expression
         "#{@class_name}()"
+      end
+
+      def to_required_hash_with(variable_expression, value_expression)
+        "#{variable_expression} = #{value_expression}.toJsonDictionary()"
       end
 
       def to_optional_value_from(variable_expression, value_expression)
@@ -233,9 +245,8 @@ module OJMGenerator
           outputln 'var hash = NSMutableDictionary()'
           types.each do |t|
             value_expression = "self.#{t.key}"
-            convert_expression = t.to_hash_with value_expression
-            line = "hash[\"#{t.key}\"] = #{convert_expression}"
-            outputln line
+            variable_expression = "hash[\"#{t.key}\"]"
+            outputln t.to_hash_with variable_expression, value_expression
           end
           outputln 'return hash'
         end
