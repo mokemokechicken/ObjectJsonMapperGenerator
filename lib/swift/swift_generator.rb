@@ -20,6 +20,10 @@ module OJMGenerator
         end
       end
 
+      def variable_name_in_code
+        key.to_s.camelize false
+      end
+
       def type_expression
         val
       end
@@ -251,9 +255,9 @@ module OJMGenerator
       def make_member_variables(types)
         types.each do |t|
           if t.optional
-            outputln "var #{t.key}: #{t.type_expression}?"
+            outputln "var #{t.variable_name_in_code}: #{t.type_expression}?"
           else
-            outputln "var #{t.key}: #{t.type_expression} = #{t.default_value_expression}"
+            outputln "var #{t.variable_name_in_code}: #{t.type_expression} = #{t.default_value_expression}"
           end
         end
       end
@@ -263,8 +267,8 @@ module OJMGenerator
         outputln 'public override func toJsonDictionary() -> NSDictionary {', '}' do
           outputln 'var hash = NSMutableDictionary()'
           types.each do |t|
-            outputln "// Encode #{t.key}"
-            value_expression = "self.#{t.key}"
+            outputln "// Encode #{t.variable_name_in_code}"
+            value_expression = "self.#{t.variable_name_in_code}"
             variable_expression = "hash[\"#{t.key}\"]"
             outputln t.to_hash_with variable_expression, value_expression
           end
@@ -277,9 +281,9 @@ module OJMGenerator
           outputln 'if let h = hash {', '} else {' do
             outputln "var this = #{class_name}()"
             types.each do |t|
-              outputln "// Decode #{t.key}"
+              outputln "// Decode #{t.variable_name_in_code}"
               value_expression = "h[\"#{t.key}\"]"
-              variable_expression = "this.#{t.key}"
+              variable_expression = "this.#{t.variable_name_in_code}"
               outputln t.to_value_from(variable_expression, value_expression)
             end
             outputln 'return this'
@@ -289,7 +293,6 @@ module OJMGenerator
           end
         end
       end
-
     end
   end
 end
