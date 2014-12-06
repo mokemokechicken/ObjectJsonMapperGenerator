@@ -64,10 +64,11 @@ module OJMGenerator
       def initialize(key, val)
         super key, val
         @generic_type = JsonTypeSwift::convert_to_type("#{@symbol}_inarray", val[0])
+        @inner_type_expression = val[0]
       end
 
       def type_expression
-        "[#{val[0]}]"
+        "[#{@inner_type_expression}]"
       end
 
       def default_value
@@ -78,12 +79,16 @@ module OJMGenerator
         default_value
       end
 
+      def to_required_hash_with(value_expression)
+        "#{value_expression}.map {x in encode(x)}"
+      end
+
       def to_optional_value_from(variable_expression, value_expression)
         out = BufferedOutputFormatter.new
         out.outputln "if let xx = #{value_expression} as? [NSDictionary] {", '}' do
           out << "#{variable_expression} = #{default_value_expression}"
           out.outputln 'for x in xx {', '}' do
-            out.outputln "if let obj = #{val[0]}.fromJsonDictionary(x) {", '} else {' do
+            out.outputln "if let obj = #{@inner_type_expression}.fromJsonDictionary(x) {", '} else {' do
               out << "#{variable_expression}!.append(obj)"
             end
             out.outputln nil, '}' do
@@ -98,7 +103,7 @@ module OJMGenerator
         out = BufferedOutputFormatter.new
         out.outputln "if let xx = #{value_expression} as? [NSDictionary] {", '} else {' do
           out.outputln 'for x in xx {', '}' do
-            out.outputln "if let obj = #{val[0]}.fromJsonDictionary(x) {", '} else {' do
+            out.outputln "if let obj = #{@inner_type_expression}.fromJsonDictionary(x) {", '} else {' do
               out << "#{variable_expression}.append(obj)"
             end
             out.outputln nil, '}' do
