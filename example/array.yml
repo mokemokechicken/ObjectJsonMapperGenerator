@@ -1,0 +1,7 @@
+Ary:
+  str: [String]
+  custom: [Number]
+  opt?: [Bool]
+
+Number:
+  value: Int

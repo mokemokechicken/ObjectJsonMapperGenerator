@@ -1,0 +1,32 @@
+{
+  "type_string": "String",
+  "type_int": 100,
+  "type_double": 10.5,
+  "type_bool": false,
+  "type_array": ["my", "name", "is"],
+  "type_hash": {
+    "id": 999,
+    "name": "String"
+  },
+  "type_custom_normal": {
+    "type_string": "String2",
+    "type_int": 200,
+    "type_double": 20.5,
+    "type_bool": true,
+    "type_array": ["your", "name", "is"],
+    "type_hash": {
+      "id": 888,
+      "name": "String3"
+    },
+    "type_nested_optional": {"value": "String4"},
+    "type_nested_custom": {"number": 7777}
+  },
+  "type_custom_option": {
+    "type_nested_optional": {}
+  },
+
+  "type_custom_array": [
+    {"type_nested_optional": {"value": "array1"}},
+    {"type_nested_optional": {"value": "array2"}}
+  ]
+}

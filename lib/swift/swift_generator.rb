@@ -6,7 +6,7 @@ module OJMGenerator
     class JsonTypeSwift < JsonType
       def self.convert_to_type(key, val)
         if val.kind_of? Array
-          ArrayType.new key, val
+          ArrayType.new key, self.convert_to_type(key, val[0])
         elsif val == 'String'
           StringType.new key, val
         elsif val == 'Int'
@@ -22,6 +22,14 @@ module OJMGenerator
 
       def type_expression
         val
+      end
+
+      def type_in_nsdictionary
+        type_expression
+      end
+
+      def optional_cast_from(value_expression)
+        "#{value_expression} as? #{type_expression}"
       end
 
       def default_value_expression
@@ -58,7 +66,7 @@ module OJMGenerator
 
       def to_required_value_from(variable_expression, value_expression)
         out = BufferedOutputFormatter.new
-        out.outputln "if let x = #{value_expression} as? #{type_expression} {", '} else {' do
+        out.outputln "if let x = #{optional_cast_from(value_expression)} {", '} else {' do
           out << "#{variable_expression} = x"
         end
         out.outputln nil, '}' do
@@ -71,12 +79,12 @@ module OJMGenerator
     class ArrayType < JsonTypeSwift
       def initialize(key, val)
         super key, val
-        @inner_type_expression = val[0]
-        @generic_type = JsonTypeSwift::convert_to_type("#{@symbol}_inarray", @inner_type_expression)
+        @inner_type = val
+        @generic_type = JsonTypeSwift::convert_to_type("#{@symbol}_inarray", @inner_type)
       end
 
       def type_expression
-        "[#{@inner_type_expression}]"
+        "[#{@inner_type.type_expression}]"
       end
 
       def default_value
@@ -93,10 +101,10 @@ module OJMGenerator
 
       def to_optional_value_from(variable_expression, value_expression)
         out = BufferedOutputFormatter.new
-        out.outputln "if let xx = #{value_expression} as? [NSDictionary] {", '}' do
+        out.outputln "if let xx = #{value_expression} as? [#{@inner_type.type_in_nsdictionary}] {", '}' do
           out << "#{variable_expression} = #{default_value_expression}"
           out.outputln 'for x in xx {', '}' do
-            out.outputln "if let obj = #{@inner_type_expression}.fromJsonDictionary(x) {", '} else {' do
+            out.outputln "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
               out << "#{variable_expression}!.append(obj)"
             end
             out.outputln nil, '}' do
@@ -109,9 +117,9 @@ module OJMGenerator
 
       def to_required_value_from(variable_expression, value_expression)
         out = BufferedOutputFormatter.new
-        out.outputln "if let xx = #{value_expression} as? [NSDictionary] {", '} else {' do
+        out.outputln "if let xx = #{value_expression} as? [#{@inner_type.type_in_nsdictionary}] {", '} else {' do
           out.outputln 'for x in xx {', '}' do
-            out.outputln "if let obj = #{@inner_type_expression}.fromJsonDictionary(x) {", '} else {' do
+            out.outputln "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
               out << "#{variable_expression}.append(obj)"
             end
             out.outputln nil, '}' do
@@ -165,17 +173,25 @@ module OJMGenerator
         "#{@class_name}()"
       end
 
+      def type_in_nsdictionary
+        'NSDictionary'
+      end
+
+      def optional_cast_from(value_expression)
+        "#{type_expression}.fromJsonDictionary(#{value_expression})"
+      end
+
       def to_required_hash_with(variable_expression, value_expression)
         "#{variable_expression} = #{value_expression}.toJsonDictionary()"
       end
 
       def to_optional_value_from(variable_expression, value_expression)
-        "#{variable_expression} = #{type_expression}.fromJsonDictionary(#{value_expression} as? NSDictionary)"
+        "#{variable_expression} = " + optional_cast_from("(#{value_expression} as? #{type_in_nsdictionary})")
       end
 
       def to_required_value_from(variable_expression, value_expression)
         out = BufferedOutputFormatter.new
-        out.outputln "if let x = #{type_expression}.fromJsonDictionary(#{value_expression} as? NSDictionary) {", '} else {' do
+        out.outputln 'if let x = ' + optional_cast_from("(#{value_expression} as? #{type_in_nsdictionary})")+ ' {', '} else {' do
           out << "#{variable_expression} = x"
         end
         out.outputln nil, '}' do
