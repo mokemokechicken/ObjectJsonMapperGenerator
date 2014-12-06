@@ -71,8 +71,8 @@ module OJMGenerator
     class ArrayType < JsonTypeSwift
       def initialize(key, val)
         super key, val
-        @generic_type = JsonTypeSwift::convert_to_type("#{@symbol}_inarray", val[0])
         @inner_type_expression = val[0]
+        @generic_type = JsonTypeSwift::convert_to_type("#{@symbol}_inarray", @inner_type_expression)
       end
 
       def type_expression
