@@ -14,7 +14,3 @@ Order:
     - user: User
       message: String
       deleted?: Bool
-  csv:
-    -
-      - id: Int
-        name: String

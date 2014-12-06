@@ -115,13 +115,15 @@ module OJMGenerator
       @indent_width = 4
     end
 
-    # @param [Hash] def_hash
-    def generate(def_hash, opts = {})
+    # @param [Hash] definitions
+    def generate(definitions, opts = {})
       with_namespace opts[:namespace] do
         output_common_functions
-        dpp def_hash
-        definitions = replace_anonymous def_hash
         dpp definitions
+        dpp '-' * 30
+        definitions = replace_anonymous definitions
+        dpp definitions
+        dpp '-' * 30
         definitions.each do |class_name, attrs|
           create_class(class_name, attrs)
           outputln
@@ -137,6 +139,7 @@ module OJMGenerator
       outputln '// Override output_common_functions methods! for output Common Functions'
     end
 
+    # 内部の無名のHashを適当に名前を付けて置き換える
     # @param [Hash] definitions
     def replace_anonymous(definitions)
       classes = {}
@@ -164,7 +167,8 @@ module OJMGenerator
         classes[new_class_name] = replace_attrs classes, new_class_name, val
         val = new_class_name
       elsif val.kind_of? Array
-        raise 'Array can contain only 1 Type!' if val.size > 1
+        raise 'Array can contain only 1 Type!' if val.size != 1
+        raise 'Array can NOT contain another Array!' if val[0].kind_of? Array
         val = [replace_attr_val(classes, class_name, key, val[0])]
       end
       val

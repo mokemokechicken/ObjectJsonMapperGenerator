@@ -195,13 +195,8 @@ module OJMGenerator
 
 
       def with_namespace(namespace)
-        if namespace
-          outputln "module #{namespace}", 'end' do
-            super namespace
-          end
-        else
-          super namespace
-        end
+        # Namespace isn't supported
+        super namespace
       end
 
       def output_common_functions
@@ -244,6 +239,7 @@ module OJMGenerator
         outputln 'public override func toJsonDictionary() -> NSDictionary {', '}' do
           outputln 'var hash = NSMutableDictionary()'
           types.each do |t|
+            outputln "// Encode #{t.key}"
             value_expression = "self.#{t.key}"
             variable_expression = "hash[\"#{t.key}\"]"
             outputln t.to_hash_with variable_expression, value_expression
@@ -256,10 +252,11 @@ module OJMGenerator
         outputln "public override class func fromJsonDictionary(hash: NSDictionary?) -> #{class_name}? {", '}' do
           outputln 'if let h = hash {', '} else {' do
             outputln "var this = #{class_name}()"
-            types.each do |value_type|
-              value_expression = "h[\"#{value_type.key}\"]"
-              variable_expression = "this.#{value_type.key}"
-              outputln value_type.to_value_from(variable_expression, value_expression)
+            types.each do |t|
+              outputln "// Decode #{t.key}"
+              value_expression = "h[\"#{t.key}\"]"
+              variable_expression = "this.#{t.key}"
+              outputln t.to_value_from(variable_expression, value_expression)
             end
             outputln 'return this'
           end
