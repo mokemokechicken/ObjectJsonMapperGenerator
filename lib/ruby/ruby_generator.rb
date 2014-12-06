@@ -124,7 +124,10 @@ module OJMGenerator
     ##########################################################
 
     class RubyOJMGenerator < GeneratorBase
-      @@indent_width = 2
+      def initialize(opts = {})
+        super(opts)
+        @indent_width = 2
+      end
 
       def with_namespace(namespace)
         if namespace

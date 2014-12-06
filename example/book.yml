@@ -1,0 +1,13 @@
+Book:
+  authors: [Author]
+  title: String
+  year: Int
+  note?: String
+  price: Double
+  option?:
+    hoge?: String
+    hara?: Bool
+
+Author:
+  name: String
+  others?: [Book]

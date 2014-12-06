@@ -1,0 +1,7 @@
+Book:
+  authors: [Author]
+  title: String
+  note?: String
+  option:
+    hoge?: String
+    hara?: Bool

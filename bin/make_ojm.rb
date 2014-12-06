@@ -7,7 +7,6 @@ require 'yaml'
 require 'stringio'
 require_relative File.expand_path('../../lib/ojm_generator', __FILE__)
 
-
 params = {}
 
 opt = OptionParser.new
@@ -42,7 +41,13 @@ debug_output =
       StringIO.new
     end
 
-gen_class = OJMGenerator::Ruby::RubyOJMGenerator
+gen_class = case params[:language]
+              when 'ruby'
+                OJMGenerator::Ruby::RubyOJMGenerator
+
+              when 'swift'
+                OJMGenerator::Swift::SwiftOJMGenerator
+            end
 
 obj = gen_class.new writer: out, debug_output: debug_output
 obj.generate  hash, namespace: params[:namespace]

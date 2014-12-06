@@ -1,0 +1,28 @@
+TypeCheck:
+  type_string: String
+  type_int: Int
+  type_double: Double
+  type_bool: Bool
+  type_array: [String]
+  type_hash:
+    id: Int
+    name: String
+  type_custom_normal: OptionalCheck
+  type_custom_option: OptionalCheck
+  type_custom_array: [OptionalCheck]
+
+OptionalCheck:
+  type_string?: String
+  type_int?: Int
+  type_double?: Double
+  type_bool?: Bool
+  type_array?: [String]
+  type_hash?:
+    id: Int
+    name: String
+  type_nested_optional:
+    value?: String
+  type_custom?: MyNumber
+
+MyNumber:
+  number: Int

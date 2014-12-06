@@ -1,12 +1,12 @@
 # coding: utf-8
 
 module OJMGenerator
-  module Ruby
+  module Swift
 
-    class JsonTypeRuby < JsonType
+    class JsonTypeSwift < JsonType
       def self.convert_to_type(key, val)
         if val.kind_of? Array
-          ArrayType.new key, val
+          ArrayType.new key, self.convert_to_type(key, val[0])
         elsif val == 'String'
           StringType.new key, val
         elsif val == 'Int'
@@ -20,192 +20,268 @@ module OJMGenerator
         end
       end
 
+      def type_expression
+        val
+      end
+
+      def type_in_nsdictionary
+        type_expression
+      end
+
+      def optional_cast_from(value_expression)
+        "#{value_expression} as? #{type_expression}"
+      end
+
       def default_value_expression
         default_value.inspect
       end
 
-      def to_hash_with(value_expression)
-        required_hash_expression = to_required_hash_with value_expression
+      def to_hash_with(variable_expression, value_expression)
         if @optional
-          "(#{value_expression} == nil ? nil : #{required_hash_expression})"
+          out = BufferedOutputFormatter.new
+          out.outputln "if let x = #{value_expression} {", '}' do
+            out.outputln to_required_hash_with variable_expression, 'x'
+          end
+          out.string_array
         else
-          required_hash_expression
+          to_required_hash_with variable_expression, value_expression
         end
       end
 
-      def to_required_hash_with(value_expression)
-        value_expression
+      def to_required_hash_with(variable_expression, value_expression)
+        "#{variable_expression} = encode(#{value_expression})"
       end
 
-      def to_value_from(value_expression)
-        required_value_convert_expression = to_required_value_from value_expression
+      def to_value_from(variable_expression, value_expression)
         if @optional
-          "(#{value_expression} == nil ? nil : #{required_value_convert_expression})"
+          to_optional_value_from variable_expression, value_expression
         else
-          required_value_convert_expression
+          to_required_value_from variable_expression, value_expression
         end
+      end
+
+      def to_optional_value_from(variable_expression, value_expression)
+        "#{variable_expression} = #{value_expression} as? #{type_expression}"
+      end
+
+      def to_required_value_from(variable_expression, value_expression)
+        out = BufferedOutputFormatter.new
+        out.outputln "if let x = #{optional_cast_from(value_expression)} {", '} else {' do
+          out << "#{variable_expression} = x"
+        end
+        out.outputln nil, '}' do
+          out << 'return nil'
+        end
+        out.string_array
       end
     end
 
-    class ArrayType < JsonTypeRuby
+    class ArrayType < JsonTypeSwift
       def initialize(key, val)
         super key, val
-        @generic_type = JsonTypeRuby::convert_to_type("#{@symbol}_inarray", val[0])
+        @inner_type = val
+        @generic_type = JsonTypeSwift::convert_to_type("#{@symbol}_inarray", @inner_type)
+      end
+
+      def type_expression
+        "[#{@inner_type.type_expression}]"
       end
 
       def default_value
-        []
+        "#{type_expression}()"
       end
 
-      def to_required_value_from(value_expression)
-          "#{value_expression}.to_a.map{|v| #{@generic_type.to_value_from('v')}}"
+      def default_value_expression
+        default_value
+      end
+
+      def to_required_hash_with(variable_expression, value_expression)
+        "#{variable_expression} = #{value_expression}.map {x in encode(x)}"
+      end
+
+      def to_optional_value_from(variable_expression, value_expression)
+        out = BufferedOutputFormatter.new
+        out.outputln "if let xx = #{value_expression} as? [#{@inner_type.type_in_nsdictionary}] {", '}' do
+          out << "#{variable_expression} = #{default_value_expression}"
+          out.outputln 'for x in xx {', '}' do
+            out.outputln "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
+              out << "#{variable_expression}!.append(obj)"
+            end
+            out.outputln nil, '}' do
+              out << 'return nil'
+            end
+          end
+        end
+        out.string_array
+      end
+
+      def to_required_value_from(variable_expression, value_expression)
+        out = BufferedOutputFormatter.new
+        out.outputln "if let xx = #{value_expression} as? [#{@inner_type.type_in_nsdictionary}] {", '} else {' do
+          out.outputln 'for x in xx {', '}' do
+            out.outputln "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
+              out << "#{variable_expression}.append(obj)"
+            end
+            out.outputln nil, '}' do
+              out << 'return nil'
+            end
+          end
+        end
+        out.outputln nil, '}' do
+          out << 'return nil'
+        end
+        out.string_array
       end
     end
 
-    class StringType < JsonTypeRuby
+    class StringType < JsonTypeSwift
       def default_value
         ''
       end
 
       def default_value_expression
-        "''"
+        '""'
       end
 
-      def to_required_value_from(value_expression)
-        "#{value_expression}.to_s"
-      end
     end
 
-    class IntegerType < JsonTypeRuby
+    class IntegerType < JsonTypeSwift
       def default_value
         0
       end
-
-      def to_required_value_from(value_expression)
-        "#{value_expression}.to_i"
-      end
     end
 
-    class DoubleType < JsonTypeRuby
+    class DoubleType < JsonTypeSwift
       def default_value
         0
       end
-
-      def to_required_value_from(value_expression)
-        "#{value_expression}.to_f"
-      end
     end
 
-    class BoolType < JsonTypeRuby
+    class BoolType < JsonTypeSwift
       def default_value
         false
       end
-
-      def to_required_value_from(value_expression)
-        "(#{value_expression} ? true : false)"
-      end
     end
 
-    class CustomType < JsonTypeRuby
+    class CustomType < JsonTypeSwift
       def initialize(key, val)
         super(key, val)
-        @class_name = val
+        @class_name = type_expression
       end
 
       def default_value_expression
-        "#{@class_name}.new"
+        "#{@class_name}()"
       end
 
-      def to_required_value_from(value_expression)
-        "#{@class_name}.new.from_json_hash(#{value_expression})"
+      def type_in_nsdictionary
+        'NSDictionary'
+      end
+
+      def optional_cast_from(value_expression)
+        "#{type_expression}.fromJsonDictionary(#{value_expression})"
+      end
+
+      def to_required_hash_with(variable_expression, value_expression)
+        "#{variable_expression} = #{value_expression}.toJsonDictionary()"
+      end
+
+      def to_optional_value_from(variable_expression, value_expression)
+        "#{variable_expression} = " + optional_cast_from("(#{value_expression} as? #{type_in_nsdictionary})")
+      end
+
+      def to_required_value_from(variable_expression, value_expression)
+        out = BufferedOutputFormatter.new
+        out.outputln 'if let x = ' + optional_cast_from("(#{value_expression} as? #{type_in_nsdictionary})")+ ' {', '} else {' do
+          out << "#{variable_expression} = x"
+        end
+        out.outputln nil, '}' do
+          out << 'return nil'
+        end
+        out.string_array
       end
     end
 
     ##########################################################
 
-    class RubyOJMGenerator < GeneratorBase
-      @@indent_width = 2
+    class SwiftOJMGenerator < GeneratorBase
+      def initialize(opts = {})
+        super(opts)
+        @indent_width = 4
+      end
+
 
       def with_namespace(namespace)
-        if namespace
-          outputln "module #{namespace}", 'end' do
-            super namespace
-          end
-        else
-          super namespace
-        end
+        # Namespace isn't supported
+        super namespace
       end
 
       def output_common_functions
-        outputln File.read(File.expand_path('../ruby_common_scripts.rb', __FILE__)).split /\n/
+        outputln File.read(File.expand_path('../swift_common_scripts.swift', __FILE__)).split /\n/
       end
 
       def convert_attrs_to_types(attrs)
         ret = []
         attrs.each do |key, val|
-          ret << JsonTypeRuby::convert_to_type(key, val)
+          ret << JsonTypeSwift::convert_to_type(key, val)
         end
         ret
       end
 
-      # For Ruby
+      # For Swift
       def create_class(class_name, attrs)
         dpp attrs
         types =  convert_attrs_to_types attrs
-        outputln "class #{class_name} < JsonGenEntityBase", 'end' do
-          # accessor
-          outputln 'attr_accessor ' + types.map {|t| ":#{t.key}"}. join(', ')
-          new_line
-          make_constructor types
+        outputln "public class #{class_name} : JsonGenEntityBase {", '}' do
+          make_member_variables types
           new_line
           make_to_json types
           new_line
-          make_from_json types
+          make_from_json class_name, types
         end
       end
 
-      def make_constructor(types)
-        outputln 'def initialize', 'end' do
-          types.each do |value_type|
-            if value_type.optional
-              outputln "@#{value_type.key} = nil"
-            else
-              outputln "@#{value_type.key} = #{value_type.default_value_expression}"
-            end
+      def make_member_variables(types)
+        types.each do |t|
+          if t.optional
+            outputln "var #{t.key}: #{t.type_expression}?"
+          else
+            outputln "var #{t.key}: #{t.type_expression} = #{t.default_value_expression}"
           end
         end
       end
 
+      # @param types Array<JsonTypeSwift>
       def make_to_json(types)
-        outputln 'def to_json_hash', 'end' do
-          outputln 'hash = {}'
-          types.each do |value_type|
-            value_expression = "@#{value_type.key}"
-            convert_expression = value_type.to_hash_with value_expression
-            line = "hash[:#{value_type.key}] = #{convert_expression}"
-            if value_type.optional
-              line += " unless @#{value_type.key} == nil"
-            end
-            outputln line
+        outputln 'public override func toJsonDictionary() -> NSDictionary {', '}' do
+          outputln 'var hash = NSMutableDictionary()'
+          types.each do |t|
+            outputln "// Encode #{t.key}"
+            value_expression = "self.#{t.key}"
+            variable_expression = "hash[\"#{t.key}\"]"
+            outputln t.to_hash_with variable_expression, value_expression
           end
-          outputln 'encode(hash)'
+          outputln 'return hash'
         end
       end
 
-      def make_from_json(types)
-        outputln 'def from_json_hash(hash)', 'end' do
-          types.each do |value_type|
-            value_expression = "hash['#{value_type.key}']"
-            convert_expression = value_type.to_value_from(value_expression)
-            line = "@#{value_type.key} = #{convert_expression}"
-            if value_type.optional
-              line += " if hash.include? '#{value_type.key}'"
+      def make_from_json(class_name, types)
+        outputln "public override class func fromJsonDictionary(hash: NSDictionary?) -> #{class_name}? {", '}' do
+          outputln 'if let h = hash {', '} else {' do
+            outputln "var this = #{class_name}()"
+            types.each do |t|
+              outputln "// Decode #{t.key}"
+              value_expression = "h[\"#{t.key}\"]"
+              variable_expression = "this.#{t.key}"
+              outputln t.to_value_from(variable_expression, value_expression)
             end
-            outputln line
+            outputln 'return this'
           end
-          outputln 'self'
+          outputln nil, '}' do
+            outputln 'return nil'
+          end
         end
       end
+
     end
   end
 end
