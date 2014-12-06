@@ -102,14 +102,18 @@ module OJMGenerator
       def to_optional_value_from(variable_expression, value_expression)
         out = BufferedOutputFormatter.new
         out.outputln "if let xx = #{value_expression} as? [#{@inner_type.type_in_nsdictionary}] {", '}' do
-          out << "#{variable_expression} = #{default_value_expression}"
-          out.outputln 'for x in xx {', '}' do
-            out.outputln "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
-              out << "#{variable_expression}!.append(obj)"
+          if @inner_type.kind_of? CustomType
+            out << "#{variable_expression} = #{default_value_expression}"
+            out.outputln 'for x in xx {', '}' do
+              out.outputln "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
+                out << "#{variable_expression}!.append(obj)"
+              end
+              out.outputln nil, '}' do
+                out << 'return nil'
+              end
             end
-            out.outputln nil, '}' do
-              out << 'return nil'
-            end
+          else
+            out << "#{variable_expression} = xx"
           end
         end
         out.string_array
@@ -118,13 +122,17 @@ module OJMGenerator
       def to_required_value_from(variable_expression, value_expression)
         out = BufferedOutputFormatter.new
         out.outputln "if let xx = #{value_expression} as? [#{@inner_type.type_in_nsdictionary}] {", '} else {' do
-          out.outputln 'for x in xx {', '}' do
-            out.outputln "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
-              out << "#{variable_expression}.append(obj)"
+          if @inner_type.kind_of? CustomType
+            out.outputln 'for x in xx {', '}' do
+              out.outputln "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
+                out << "#{variable_expression}.append(obj)"
+              end
+              out.outputln nil, '}' do
+                out << 'return nil'
+              end
             end
-            out.outputln nil, '}' do
-              out << 'return nil'
-            end
+          else
+            out << "#{variable_expression} = xx"
           end
         end
         out.outputln nil, '}' do
