@@ -1,0 +1,59 @@
+api_prefix: Qiita
+entity_prefix: Qiita
+
+api:
+  ListItem:
+    get: items
+    params:
+      page: Int
+      per_page: Int
+    response: [User]
+
+  GetItem:
+    get: items/{id}
+    response: Item
+
+  PostItem:
+    post: items
+    body:
+      body: String
+      coediting: Bool
+      gist: Bool
+      Private: Bool
+      tags: [Tag]
+      title: String
+      tweet: Bool
+
+entity:
+  Tag:
+    name: String
+    versions: [String]
+
+  Item:
+    body: String
+    coediting: Bool
+    created_at: String
+    id: String
+    _private?: Bool
+    tags: [Tag]
+    title: String
+    updated_at: String
+    url: String
+    user: User
+
+  User:
+    description?: String
+    facebook_id?: String
+    followees_count: Int
+    followers_count: Int
+    github_login_name?: String
+    id: String
+    items_count: Int
+    linkedin_id?: String
+    location?: String
+    name?: String
+    organization?: String
+    profile_image_url?: String
+    twitter_screen_name?: String
+    website_url?: String
+
