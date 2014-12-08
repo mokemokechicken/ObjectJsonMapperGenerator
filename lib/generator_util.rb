@@ -42,8 +42,11 @@ module Yousei
     end
 
     def outputln(s='', after_block=nil)
-      output s
-      new_line
+      unless s.nil?
+        output s
+        new_line
+      end
+
       if block_given?
         incr_indent
         yield
