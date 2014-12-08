@@ -66,19 +66,33 @@ module Yousei::APIGenerator
       def create_api_class(api_name, api_attrs)
         class_name = api_class_name api_name
         outputln "public class #{class_name} : #{yousei_class_name :Base} {" do
-          outputln "public init(config: #{yousei_class_name :ConfigProtocol}) {" do
-            outputln 'var meta = [String:AnyObject]()'
-            if api_attrs['meta'].kind_of? Hash
-              api_attrs['meta'].each do |k, v|
-                outputln "meta[\"#{k}\"] = #{sl v}"
-              end
-            end
-
-            method, path = method_and_path api_attrs
-            outputln "let apiInfo = #{yousei_class_name :Info}(method: .#{method}, path: #{sl path}, meta: meta)"
-            outputln 'super.init(config: config, info: apiInfo)'
-          end
+          create_func_init api_name, api_attrs
+          create_class_params api_name, api_attrs
+          create_func_call api_name, api_attrs
         end
+      end
+
+      def create_func_init(api_name, api_attrs)
+        outputln "public init(config: #{yousei_class_name :ConfigProtocol}) {" do
+          outputln 'var meta = [String:AnyObject]()'
+          if api_attrs['meta'].kind_of? Hash
+            api_attrs['meta'].each do |k, v|
+              outputln "meta[\"#{k}\"] = #{sl v}"
+            end
+          end
+
+          method, path = method_and_path api_attrs
+          outputln "let apiInfo = #{yousei_class_name :Info}(method: .#{method}, path: #{sl path}, meta: meta)"
+          outputln 'super.init(config: config, info: apiInfo)'
+        end
+      end
+
+      def create_class_params(api_name, api_attrs)
+
+      end
+
+      def create_func_call(api_name, api_attrs)
+
       end
     end
   end
