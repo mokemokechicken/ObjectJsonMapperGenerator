@@ -74,3 +74,13 @@ module Yousei
   end
 end
 
+class String
+  def camelize(uppercase_first_letter = true)
+    if uppercase_first_letter
+      self.split('_').each {|s| s.capitalize! }.join('')
+    else
+      x, xs = self.split('_', 2)
+      x + (xs || '').camelize
+    end
+  end
+end
