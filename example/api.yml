@@ -1,4 +1,4 @@
-api_prefix: Qiita
+api_prefix: QiitaAPI
 entity_prefix: Qiita
 
 api:
