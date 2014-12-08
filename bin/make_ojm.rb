@@ -5,7 +5,7 @@
 require 'optparse'
 require 'yaml'
 require 'stringio'
-require_relative File.expand_path('../../lib/ojm_generator', __FILE__)
+require_relative File.expand_path('../../lib/yousei', __FILE__)
 
 params = {}
 

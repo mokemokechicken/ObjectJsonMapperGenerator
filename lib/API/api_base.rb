@@ -1,0 +1,3 @@
+module Yousei::APIGenerator
+
+end
