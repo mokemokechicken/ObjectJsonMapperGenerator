@@ -43,10 +43,10 @@ debug_output =
 
 gen_class = case params[:language]
               when 'ruby'
-                OJMGenerator::Ruby::RubyOJMGenerator
+                Yousei::OJMGenerator::Ruby::RubyOJMGenerator
 
               when 'swift'
-                OJMGenerator::Swift::SwiftOJMGenerator
+                Yousei::OJMGenerator::Swift::SwiftOJMGenerator
             end
 
 obj = gen_class.new writer: out, debug_output: debug_output

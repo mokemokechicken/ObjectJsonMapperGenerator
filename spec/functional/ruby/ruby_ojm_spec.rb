@@ -21,6 +21,10 @@ Order:
     - user: User
       message: String
       deleted?: Bool
+  csv:
+    -
+      - id: Int
+        name: String
 YAML
 
 
@@ -35,6 +39,10 @@ order_json  = <<JSON
   "comments": [
     {"user": {"name": "who1"}, "message": "this shop is good!"},
     {"user": {"name": "who2"}, "message": "this shop is bad!", "deleted": true}
+  ],
+  "csv": [
+    [ {"id": 1, "name": "name1"} ],
+    [ {"id": 2, "name": "name2"}, {"id": 22, "name": "name22"} ]
   ]
 }
 JSON
@@ -46,7 +54,7 @@ describe 'Ruby OJM Function' do
   before do
     @buffer = StringIO.new
     dev_null = StringIO.new
-    @gen = OJMGenerator::Ruby::RubyOJMGenerator.new writer: @buffer, debug_output: dev_null
+    @gen = Yousei::OJMGenerator::Ruby::RubyOJMGenerator.new writer: @buffer, debug_output: dev_null
     @gen.generate structure, namespace: 'MySpec'
     @code = @buffer.string
   end
@@ -102,6 +110,15 @@ describe 'Ruby OJM Function' do
       expect(@order.comments[1].deleted).to eq true
     end
 
+    it 'should parse csv info' do
+      expect(@order.csv[0][0].id).to eq 1
+      expect(@order.csv[0][0].name).to eq 'name1'
+
+      expect(@order.csv[1][0].id).to eq 2
+      expect(@order.csv[1][0].name).to eq 'name2'
+      expect(@order.csv[1][1].id).to eq 22
+      expect(@order.csv[1][1].name).to eq 'name22'
+    end
   end
 
   describe 'Order Encoder' do
@@ -143,6 +160,15 @@ describe 'Ruby OJM Function' do
       expect(@json[:comments][1][:message]).to eq 'this shop is bad!'
       expect(@json[:comments][1][:deleted]).to eq true
     end
+    it 'should parse csv info' do
+      expect(@json[:csv][0][0][:id]).to eq 1
+      expect(@json[:csv][0][0][:name]).to eq 'name1'
+      expect(@json[:csv][1][0][:id]).to eq 2
+      expect(@json[:csv][1][0][:name]).to eq 'name2'
+      expect(@json[:csv][1][1][:id]).to eq 22
+      expect(@json[:csv][1][1][:name]).to eq 'name22'
+    end
+
   end
 end
 

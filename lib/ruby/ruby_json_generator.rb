@@ -1,6 +1,6 @@
 # coding: utf-8
 
-module OJMGenerator
+module Yousei::OJMGenerator
   module Ruby
 
     class JsonTypeRuby < JsonType
