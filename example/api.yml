@@ -15,6 +15,9 @@ api:
 
   PostItem:
     post: items
+    meta:
+      ios: true
+      hoge: fuga
     body:
       body: String
       coediting: Bool

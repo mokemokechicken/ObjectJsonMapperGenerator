@@ -51,7 +51,11 @@ module Yousei
         incr_indent
         yield
         decr_indent
-        outputln after_block if after_block
+        if after_block != nil
+          outputln after_block
+        else
+          outputln '}' if s.end_with? '{'
+        end
       end
     end
   end
