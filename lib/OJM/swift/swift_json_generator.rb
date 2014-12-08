@@ -146,17 +146,38 @@ module Yousei::OJMGenerator
 
 
       def with_namespace(namespace)
-        if namespace
-          outputln "module #{namespace}", 'end' do
-            super namespace
-          end
-        else
-          super namespace
-        end
+        @class_prefix = namespace
+        super(namespace)
       end
 
       def output_common_functions
         outputln File.read(File.expand_path('../swift_common_scripts.swift', __FILE__)).split /\n/
+      end
+
+      def customize_definitions(definitions)
+        return definitions unless @class_prefix
+        type_map = definitions.keys.map {|c| [c, "#{@class_prefix}#{c}"]}.to_h
+
+        ret = {}
+        definitions.each do |klass, v|
+          ret[type_map[klass]] = v
+        end
+        z = replace_definitions(ret, type_map)
+        dpp z
+        z
+      end
+
+      def replace_definitions(values, type_map)
+        return (type_map[values] || values) unless values.kind_of?(Array) || values.kind_of?(Hash)
+        if values.kind_of? Array
+          return values.map {|x| replace_definitions(x, type_map)}
+        elsif values.kind_of? Hash
+          ret = {}
+          values.each do |kk, vv|
+            ret[kk] = replace_definitions(vv, type_map)
+          end
+          ret
+        end
       end
 
       def convert_attrs_to_types(attrs)

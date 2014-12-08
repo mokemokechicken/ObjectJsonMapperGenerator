@@ -12,7 +12,8 @@ params = {}
 opt = OptionParser.new
 opt.on('-v', 'Verbose') {|v| params[:verbose] = v }
 opt.on('-c filename', 'Specify Structure YAML File') {|v| params[:config] = v }
-opt.on('-l language', %w(ruby swift)) {|v| params[:language] = v }
+opt.on('-l language', %w(ruby swift), 'ruby|swift') {|v| params[:language] = v }
+opt.on('-t type', %w(json api), 'json|api') {|v| params[:type] = v }
 opt.on('-n [namespace]', 'Specify Namespace of OJM codes') {|v| params[:namespace] = v }
 opt.on('-o [output filename]', 'Specify output filename.') {|v| params[:output] = v }
 
@@ -41,13 +42,14 @@ debug_output =
       StringIO.new
     end
 
-gen_class = case params[:language]
-              when 'ruby'
-                Yousei::OJMGenerator::Ruby::RubyOJMGenerator
-
-              when 'swift'
-                Yousei::OJMGenerator::Swift::SwiftOJMGenerator
+gen_class = case [params[:language], params[:type]]
+              when %w(ruby json) then Yousei::OJMGenerator::Ruby::RubyOJMGenerator
+              when %w(swift json) then Yousei::OJMGenerator::Swift::SwiftOJMGenerator
+              when %w(swift api) then Yousei::APIGenerator::Swift::SwiftGenerator
+              else
+                puts "unsupported type #{params[:type]} and language #{params[:language]}"
+                exit 1
             end
 
 obj = gen_class.new writer: out, debug_output: debug_output
-obj.generate  hash, namespace: params[:namespace]
+obj.generate hash, namespace: params[:namespace]

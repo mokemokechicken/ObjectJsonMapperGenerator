@@ -44,6 +44,7 @@ module Yousei::OJMGenerator
         dpp def_hash
         definitions = replace_anonymous def_hash
         dpp definitions
+        definitions = customize_definitions definitions
         definitions.each do |class_name, attrs|
           create_class(class_name, attrs)
           outputln
@@ -67,6 +68,10 @@ module Yousei::OJMGenerator
         classes[class_name] = new_attrs
       end
       classes
+    end
+
+    def customize_definitions(definitions)
+      definitions
     end
 
     # @param [Hash] classes

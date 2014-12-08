@@ -6,5 +6,4 @@ require_relative 'OJM/ruby/ruby_json_generator'
 require_relative 'OJM/swift/swift_json_generator'
 
 require_relative 'API/api_base'
-
-
+require_relative 'API/swift/swift_api_generator'
