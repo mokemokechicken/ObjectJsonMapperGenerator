@@ -7,27 +7,32 @@ api:
     params:
       page?: Int
       per_page?: Int
-    response: [User]
+    response: [Item]
 
   GetItem:
-    get: items/{id}/{day}
-    params:
-      id: Int
+    get: items/{id}
     response: Item
 
   PostItem:
     post: items
-    meta:
-      ios: true
-      hoge: fuga
     body:
       body: String
       coediting: Bool
-      gist: Bool
-      Private: Bool
+      gist?: Bool
+      private: Bool
       tags: [Tag]
       title: String
-      tweet: Bool
+      tweet?: Bool
+
+  PatchItem:
+    patch: items/{id}
+    body:
+      body: String
+      coediting: Bool
+      private: Bool
+      tags: [Tag]
+      title: String
+
 
 entity:
   Tag:

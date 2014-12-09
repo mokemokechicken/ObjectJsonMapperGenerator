@@ -134,6 +134,10 @@ module Yousei::Swift
       "[#{@inner_type.type_expression}]"
     end
 
+    def from_data_expression(value_expression)
+      @inner_type.from_data_expression value_expression
+    end
+
     def default_value
       "#{type_expression}()"
     end
@@ -230,6 +234,10 @@ module Yousei::Swift
 
     def type_in_nsdictionary
       'NSDictionary'
+    end
+
+    def from_data_expression(value_expression)
+      "#{type_expression}.fromData(#{value_expression})"
     end
 
     def optional_cast_from(value_expression)

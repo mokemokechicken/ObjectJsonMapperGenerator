@@ -57,15 +57,6 @@ module Yousei::APIGenerator
         end
       end
 
-
-      def method_and_path(api_attrs)
-        return ['GET', api_attrs['get']] if api_attrs.include? 'get'
-        return ['POST', api_attrs['post']] if api_attrs.include? 'post'
-        return ['PUT', api_attrs['put']] if api_attrs.include? 'put'
-        return ['PATCH', api_attrs['patch']] if api_attrs.include? 'patch'
-        return ['DELETE', api_attrs['delete']] if api_attrs.include? 'delete'
-      end
-
       def create_api_class(api_name, api_attrs)
         class_name =  api_class api_name
         line "public class #{class_name} : #{yousei_class :Base} {" do
@@ -93,7 +84,7 @@ module Yousei::APIGenerator
       end
 
       def create_func_setup(api_name, api_attrs)
-        def setup_query_variable(api_attrs)
+        def make_args_list(api_attrs)
           required_param_list = []
           optional_param_list = []
           if api_attrs['params']
@@ -119,7 +110,7 @@ module Yousei::APIGenerator
           [args_expression, required_param_list, optional_param_list]
         end
 
-        args_expression, required_param_list, optional_param_list = setup_query_variable(api_attrs)
+        args_expression, required_param_list, optional_param_list = make_args_list(api_attrs)
 
         line "public func setup(#{args_expression}) -> #{api_class api_name} {" do
           line 'query = [String:AnyObject]()'
@@ -142,13 +133,45 @@ module Yousei::APIGenerator
         end
       end
 
+
+      def create_func_call(api_name, api_attrs)
+        if api_attrs['body'] && required_body_object?(api_attrs)
+          create_func_call_with_body(api_name, api_attrs)
+        else
+          create_func_call_normal(api_name, api_attrs)
+        end
+      end
+
+      def create_func_call_normal(api_name, api_attrs)
+        rvar = SwiftVariable::create_variable 'response', api_attrs['response']
+        line "public func call(completionHandler: (#{yousei_class :Response}, #{rvar.type_expression}?) -> Void) {" do
+          line 'doRequest() { response in', '}' do
+            line "completionHandler(response, #{rvar.from_data_expression 'response.data'} as? #{rvar.type_expression})"
+          end
+        end
+      end
+
+      def create_func_call_with_body(api_name, api_attrs)
+
+      end
+
+      ######################## Helper ################################
+      def method_and_path(api_attrs)
+        return ['GET', api_attrs['get']] if api_attrs.include? 'get'
+        return ['POST', api_attrs['post']] if api_attrs.include? 'post'
+        return ['PUT', api_attrs['put']] if api_attrs.include? 'put'
+        return ['PATCH', api_attrs['patch']] if api_attrs.include? 'patch'
+        return ['DELETE', api_attrs['delete']] if api_attrs.include? 'delete'
+      end
+
+      def required_body_object?(api_attrs)
+        method, _ = method_and_path api_attrs
+        %w(POST PUT PATCH).include? method
+      end
+
       def path_placeholder_keys(api_attrs)
         _, path = method_and_path api_attrs
         path.scan(/\{([^}]+)\}/).map {|x| x[0]}
-      end
-
-      def create_func_call(api_name, api_attrs)
-        
       end
     end
   end
