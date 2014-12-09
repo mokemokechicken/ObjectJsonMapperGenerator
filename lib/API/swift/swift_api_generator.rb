@@ -34,11 +34,17 @@ module Yousei::APIGenerator
 
         definitions = opts[:def]
 
+        output_api_base_script
+
         create_factory definitions
         definitions.each do |api_name, api_attrs|
           new_line
           create_api_class api_name, api_attrs
         end
+      end
+
+      def output_api_base_script
+        line File.read(File.expand_path('../common.swift', __FILE__)).split /\n/
       end
 
       def create_factory(definitions)

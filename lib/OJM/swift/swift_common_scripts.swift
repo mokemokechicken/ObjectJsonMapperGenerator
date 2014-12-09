@@ -1,5 +1,3 @@
-import Foundation
-
 private func encode(obj: AnyObject?) -> AnyObject {
     switch obj {
     case nil:
@@ -21,6 +19,13 @@ private func decodeOptional(obj: AnyObject?) -> AnyObject? {
     default:
         return obj
     }
+}
+
+func JsonGenObjectFromJsonData(data: NSData!) -> AnyObject? {
+    if data == nil {
+        return nil
+    }
+    return NSJSONSerialization.JSONObjectWithData(data, options:NSJSONReadingOptions.MutableContainers, error: nil)
 }
 
 public class JsonGenEntityBase {
@@ -54,11 +59,7 @@ public class JsonGenEntityBase {
     }
 
     public class func fromData(data: NSData!) -> AnyObject? {
-        if data == nil {
-            return nil
-        }
-
-        var object = NSJSONSerialization.JSONObjectWithData(data, options:NSJSONReadingOptions.MutableContainers, error: nil) as? NSObject
+        var object:AnyObject? = JsonGenObjectFromJsonData(data)
         switch object {
         case let hash as NSDictionary:
             return fromJsonDictionary(hash)
@@ -67,7 +68,7 @@ public class JsonGenEntityBase {
             return fromJsonArray(array)
 
         default:
-            return nil
+            return object
         }
     }
 
@@ -99,4 +100,3 @@ public class JsonGenEntityBase {
         return NSJSONSerialization.dataWithJSONObject(obj, options: options, error: nil)!
     }
 }
-

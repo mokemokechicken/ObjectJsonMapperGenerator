@@ -46,6 +46,11 @@ module Yousei::OJMGenerator
         end
       end
 
+      def output_include
+        super
+        line 'import Foundation'
+      end
+
       def output_common_functions
         line File.read(File.expand_path('../swift_common_scripts.swift', __FILE__)).split /\n/
       end

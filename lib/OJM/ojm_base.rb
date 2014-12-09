@@ -13,6 +13,8 @@ module Yousei::OJMGenerator
     # @param [Hash] def_hash
     def generate(def_hash, opts = {})
       with_namespace opts[:namespace] do
+        output_include
+        new_line
         output_common_functions
         # dpp def_hash
         definitions = replace_anonymous def_hash
@@ -27,6 +29,9 @@ module Yousei::OJMGenerator
 
     def with_namespace(namespace)
       yield(namespace) if block_given?
+    end
+
+    def output_include
     end
 
     def output_common_functions
