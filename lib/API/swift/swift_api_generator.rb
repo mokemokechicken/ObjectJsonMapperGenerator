@@ -93,7 +93,7 @@ module Yousei::APIGenerator
       end
 
       def create_func_setup(api_name, api_attrs)
-        def setup_query_variable(api_name, api_attrs)
+        def setup_query_variable(api_attrs)
           required_param_list = []
           optional_param_list = []
           if api_attrs['params']
@@ -116,23 +116,29 @@ module Yousei::APIGenerator
           args_expression = param_list.map {|v|
             "##{v.code_name}: #{v.type_expression_with_optional}#{default_value if v.optional}"
           }.join(', ')
-
-          line "public func setup(#{args_expression}) -> #{api_class api_name} {" do
-            line 'query = [String:AnyObject]()'
-            required_param_list.each do |var|
-              line "query[\"#{var.ident}\"] = #{var.code_name}"
-            end
-            optional_param_list.each do |var|
-              line "if let x = #{var.code_name} { query[\"#{var.ident}\"] = x }"
-            end
-          end
+          [args_expression, required_param_list, optional_param_list]
         end
 
-        setup_query_variable(api_name, api_attrs)
+        args_expression, required_param_list, optional_param_list = setup_query_variable(api_attrs)
 
-        line 'var path = apiRequest.info.path'
-        path_placeholder_keys(api_attrs).each do |key|
-          line "path = replacePathPlaceholder(path, key: \"#{key}\")"
+        line "public func setup(#{args_expression}) -> #{api_class api_name} {" do
+          line 'query = [String:AnyObject]()'
+          required_param_list.each do |var|
+            line "query[\"#{var.ident}\"] = #{var.code_name}"
+          end
+          optional_param_list.each do |var|
+            line "if let x = #{var.code_name} { query[\"#{var.ident}\"] = x }"
+          end
+
+          new_line
+
+          line 'var path = apiRequest.info.path'
+          path_placeholder_keys(api_attrs).each do |key|
+            line "path = replacePathPlaceholder(path, key: \"#{key}\")"
+          end
+
+          line 'apiRequest.request.URL = NSURL(string: path, relativeToURL: config.baseURL)'
+          line 'return self'
         end
       end
 
@@ -142,7 +148,7 @@ module Yousei::APIGenerator
       end
 
       def create_func_call(api_name, api_attrs)
-
+        
       end
     end
   end
