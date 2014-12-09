@@ -2,222 +2,9 @@
 
 module Yousei::OJMGenerator
   module Swift
-
-    class SwiftVariable < Variable
-      def self.create_variable(ident, type)
-        if type.kind_of? Array
-          ArrayType.new ident, self.create_variable(ident, type[0])
-        elsif type == 'String'
-          StringVariable.new ident, type
-        elsif type == 'Int'
-          IntegerVariable.new ident, type
-        elsif type == 'Double'
-          DoubleVariable.new ident, type
-        elsif type == 'Bool'
-          BoolVariable.new ident, type
-        else
-          CustomVariable.new ident, type
-        end
-      end
-
-      def variable_name_in_code
-        ident.sv
-      end
-
-      def type_expression
-        type
-      end
-
-      def type_in_nsdictionary
-        type_expression
-      end
-
-      def optional_cast_from(value_expression)
-        "#{value_expression} as? #{type_expression}"
-      end
-
-      def default_value_expression
-        default_value.inspect
-      end
-
-      def to_hash_with(variable_expression, value_expression)
-        if @optional
-          out = BufferedOutputFormatter.new
-          out.line "if let x = #{value_expression} {", '}' do
-            out.line to_required_hash_with variable_expression, 'x'
-          end
-          out.string_array
-        else
-          to_required_hash_with variable_expression, value_expression
-        end
-      end
-
-      def to_required_hash_with(variable_expression, value_expression)
-        "#{variable_expression} = encode(#{value_expression})"
-      end
-
-      def to_value_from(variable_expression, value_expression)
-        if @optional
-          to_optional_value_from variable_expression, value_expression
-        else
-          to_required_value_from variable_expression, value_expression
-        end
-      end
-
-      def to_optional_value_from(variable_expression, value_expression)
-        "#{variable_expression} = #{value_expression} as? #{type_expression}"
-      end
-
-      def to_required_value_from(variable_expression, value_expression)
-        out = BufferedOutputFormatter.new
-        out.line "if let x = #{optional_cast_from(value_expression)} {", '} else {' do
-          out.line "#{variable_expression} = x"
-        end
-        out.line nil, '}' do
-          out.line 'return nil'
-        end
-        out.string_array
-      end
-    end
-
-    class ArrayType < SwiftVariable
-      def initialize(ident, type)
-        super ident, type
-        @inner_type = type
-        @generic_type = SwiftVariable::create_variable("#{@symbol}_inarray", @inner_type)
-      end
-
-      def type_expression
-        "[#{@inner_type.type_expression}]"
-      end
-
-      def default_value
-        "#{type_expression}()"
-      end
-
-      def default_value_expression
-        default_value
-      end
-
-      def to_required_hash_with(variable_expression, value_expression)
-        "#{variable_expression} = #{value_expression}.map {x in encode(x)}"
-      end
-
-      def to_optional_value_from(variable_expression, value_expression)
-        out = BufferedOutputFormatter.new
-        out.line "if let xx = #{value_expression} as? [#{@inner_type.type_in_nsdictionary}] {", '}' do
-          if @inner_type.kind_of? CustomVariable
-            out.line "#{variable_expression} = #{default_value_expression}"
-            out.line 'for x in xx {', '}' do
-              out.line "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
-                out.line "#{variable_expression}!.append(obj)"
-              end
-              out.line nil, '}' do
-                out.line 'return nil'
-              end
-            end
-          else
-            out.line "#{variable_expression} = xx"
-          end
-        end
-        out.string_array
-      end
-
-      def to_required_value_from(variable_expression, value_expression)
-        out = BufferedOutputFormatter.new
-        out.line "if let xx = #{value_expression} as? [#{@inner_type.type_in_nsdictionary}] {", '} else {' do
-          if @inner_type.kind_of? CustomVariable
-            out.line 'for x in xx {', '}' do
-              out.line "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
-                out.line "#{variable_expression}.append(obj)"
-              end
-              out.line nil, '}' do
-                out.line 'return nil'
-              end
-            end
-          else
-            out.line "#{variable_expression} = xx"
-          end
-        end
-        out.line nil, '}' do
-          out.line 'return nil'
-        end
-        out.string_array
-      end
-    end
-
-    class StringVariable < SwiftVariable
-      def default_value
-        ''
-      end
-
-      def default_value_expression
-        '""'
-      end
-
-    end
-
-    class IntegerVariable < SwiftVariable
-      def default_value
-        0
-      end
-    end
-
-    class DoubleVariable < SwiftVariable
-      def default_value
-        0
-      end
-    end
-
-    class BoolVariable < SwiftVariable
-      def default_value
-        false
-      end
-    end
-
-    class CustomVariable < SwiftVariable
-      def initialize(ident, type)
-        super(ident, type)
-        @class_name = type_expression
-      end
-
-      def default_value_expression
-        "#{@class_name}()"
-      end
-
-      def type_in_nsdictionary
-        'NSDictionary'
-      end
-
-      def optional_cast_from(value_expression)
-        "#{type_expression}.fromJsonDictionary(#{value_expression})"
-      end
-
-      def to_required_hash_with(variable_expression, value_expression)
-        "#{variable_expression} = #{value_expression}.toJsonDictionary()"
-      end
-
-      def to_optional_value_from(variable_expression, value_expression)
-        "#{variable_expression} = " + optional_cast_from("(#{value_expression} as? #{type_in_nsdictionary})")
-      end
-
-      def to_required_value_from(variable_expression, value_expression)
-        out = BufferedOutputFormatter.new
-        out.line 'if let x = ' + optional_cast_from("(#{value_expression} as? #{type_in_nsdictionary})")+ ' {', '} else {' do
-          out.line "#{variable_expression} = x"
-        end
-        out.line nil, '}' do
-          out.line 'return nil'
-        end
-        out.string_array
-      end
-    end
-
-    ##########################################################
-
     class SwiftOJMGenerator < GeneratorBase
       def initialize(opts = {})
-        Yousei::enable_swift_feature
+        Yousei::Swift::enable_swift_feature
         super(opts)
         @indent_width = 4
       end
@@ -264,14 +51,13 @@ module Yousei::OJMGenerator
       def convert_attrs_to_variables(attrs)
         ret = []
         attrs.each do |ident, type|
-          ret << SwiftVariable::create_variable(ident, type)
+          ret << Yousei::Swift::SwiftVariable::create_variable(ident, type)
         end
         ret
       end
 
       # For Swift
       def create_class(class_name, attrs)
-        dpp attrs
         variables =  convert_attrs_to_variables attrs
         line "public class #{class_name} : JsonGenEntityBase {", '}' do
           make_member_variables variables

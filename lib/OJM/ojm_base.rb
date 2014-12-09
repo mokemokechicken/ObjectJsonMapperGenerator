@@ -1,35 +1,8 @@
 # coding: utf-8
 
 module Yousei::OJMGenerator
-  module Common
-    def pure_symbol(key)
-      key.to_s.gsub(/[?]/, '')
-    end
-
-    def optional?(key)
-      key =~ /\?$/
-    end
-  end
-
-  class Variable
-    include Common
-    include Yousei
-
-    attr_accessor :ident, :type, :optional
-
-    def initialize(ident, type)
-      @ident = pure_symbol ident
-      @type = type
-      @optional = optional? ident
-    end
-
-    def to_value_from(value_expression)
-      value_expression
-    end
-  end
-
   class GeneratorBase
-    include Common
+    include Yousei::Common
     include Yousei::OutputFormatter
 
     def initialize(opts={})
@@ -41,9 +14,9 @@ module Yousei::OJMGenerator
     def generate(def_hash, opts = {})
       with_namespace opts[:namespace] do
         output_common_functions
-        dpp def_hash
+        # dpp def_hash
         definitions = replace_anonymous def_hash
-        dpp definitions
+        # dpp definitions
         definitions = customize_definitions definitions
         definitions.each do |class_name, attrs|
           create_class(class_name, attrs)

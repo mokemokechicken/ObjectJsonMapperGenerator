@@ -2,7 +2,7 @@
 
 module Yousei::OJMGenerator
   module Ruby
-
+    include Yousei
     class RubyVariable < Variable
       def self.convert_to_variable(ident, type)
         if type.kind_of? Array

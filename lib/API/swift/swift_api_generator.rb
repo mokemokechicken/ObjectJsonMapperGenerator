@@ -15,7 +15,7 @@ module Yousei::APIGenerator
       include Util
 
       def generate(definitions, opts = nil)
-        Yousei::enable_swift_feature
+        Yousei::Swift::enable_swift_feature
         super definitions, opts
       end
 

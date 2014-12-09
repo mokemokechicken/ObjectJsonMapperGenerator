@@ -62,23 +62,52 @@ module Yousei
     alias_method :line, :outputln
   end
 
-  class BufferedOutputFormatter
-    attr_accessor :string_array
-    include OutputFormatter
+  module OutputFormatterClasses
+    class BufferedOutputFormatter
+      attr_accessor :string_array
+      include OutputFormatter
 
-    def initialize(opts={})
-      @string_array = []
-      initialize_formatter opts
-      @line = ''
+      def initialize(opts={})
+        @string_array = []
+        initialize_formatter opts
+        @line = ''
+      end
+
+      def write(s)
+        @line += s
+      end
+
+      def new_line
+        @string_array << @line
+        @line = ''
+      end
+    end
+  end
+
+  module Common
+    def pure_symbol(key)
+      key.to_s.gsub(/[?]/, '')
     end
 
-    def write(s)
-      @line += s
+    def optional?(key)
+      key =~ /\?$/
+    end
+  end
+
+  class Variable
+    include Common
+    include OutputFormatterClasses
+
+    attr_accessor :ident, :type, :optional
+
+    def initialize(ident, type)
+      @ident = pure_symbol ident
+      @type = type
+      @optional = optional? ident
     end
 
-    def new_line
-      @string_array << @line
-      @line = ''
+    def to_value_from(value_expression)
+      value_expression
     end
   end
 end
