@@ -58,6 +58,8 @@ module Yousei
         end
       end
     end
+
+    alias_method :line, :outputln
   end
 
   class BufferedOutputFormatter

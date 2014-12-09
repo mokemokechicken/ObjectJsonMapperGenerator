@@ -8,10 +8,10 @@ module Yousei::APIGenerator
     end
 
     # @param [Hash] definitions
-    def generate(definitions, opts = {})
+    def generate(definitions, opts=nil)
       fetch_definitions definitions
-      create_entity if @entity_def
-      create_api 
+      create_entity(prefix: @entity_prefix, def: @entity_def) if @entity_def
+      create_api(prefix: @api_prefix, def: @api_def)
     end
 
     def fetch_definitions(definitions)
@@ -22,10 +22,10 @@ module Yousei::APIGenerator
       @entity_prefix = definitions['entity_prefix'].to_s
     end
 
-    def create_entity
+    def create_entity(opts)
     end
     
-    def create_api
+    def create_api(opts)
     end
 
   end
