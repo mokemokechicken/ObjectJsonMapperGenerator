@@ -13,6 +13,8 @@ module Yousei::APIGenerator
 
 
     class SwiftGenerator < GeneratorBase
+      TEMPLATE_YOUSEI_PREFIX = 'YOUSEI_API_GENERATOR_PREFIX_'
+
       include Util
       include Yousei::Swift
 
@@ -23,7 +25,7 @@ module Yousei::APIGenerator
 
       def create_entity(opts)
         super
-        generator = Yousei::OJMGenerator::Swift::SwiftOJMGenerator.new
+        generator = Yousei::OJMGenerator::Swift::SwiftOJMGenerator.new writer: @writer
         generator.generate opts[:def], namespace: opts[:prefix].to_s
       end
 
@@ -34,7 +36,7 @@ module Yousei::APIGenerator
 
         definitions = opts[:def]
 
-        output_api_base_script
+        output_api_base_script(@yousei_class_prefix)
 
         create_factory definitions
         definitions.each do |api_name, api_attrs|
@@ -43,8 +45,10 @@ module Yousei::APIGenerator
         end
       end
 
-      def output_api_base_script
-        line File.read(File.expand_path('../common.swift', __FILE__)).split /\n/
+      def output_api_base_script(prefix)
+        template = File.read(File.expand_path('../common.swift', __FILE__))
+        template.gsub!(/#{TEMPLATE_YOUSEI_PREFIX}/, prefix)
+        line template.split /\n/
       end
 
       def create_factory(definitions)
@@ -127,10 +131,17 @@ module Yousei::APIGenerator
 
           default_value = ' = nil'
           param_list = required_param_list + optional_param_list
-          args_expression = param_list.map {|v|
-            "##{v.code_name}: #{v.type_expression_with_optional}#{default_value if v.optional}"
-          }.join(', ')
-          [args_expression, required_param_list, optional_param_list]
+          args_expression_list = []
+          param_list.each_with_index  do |v, i|
+            if i == 0 && !v.optional
+              var_name = "##{v.code_name}"
+            else
+              var_name = v.code_name
+            end
+            args_expression_list << "#{var_name}: #{v.type_expression_with_optional}#{default_value if v.optional}"
+          end
+
+          [args_expression_list.join(', '), required_param_list, optional_param_list]
         end
 
         args_expression, required_param_list, optional_param_list = make_args_list(api_attrs)
@@ -167,7 +178,7 @@ module Yousei::APIGenerator
 
       def create_func_call_normal(api_name, api_attrs)
         rvar, handler_type = rvar_and_handler_type api_attrs
-        line "public func call(completionHandler: (#{handler_type}) {" do
+        line "public func call(completionHandler: #{handler_type}) {" do
           create_do_request rvar, false
         end
       end
