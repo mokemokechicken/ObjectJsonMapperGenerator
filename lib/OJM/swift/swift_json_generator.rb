@@ -3,7 +3,7 @@
 module Yousei::OJMGenerator
   module Swift
 
-    class JsonTypeSwift < JsonType
+    class SwiftType < JsonType
       def self.convert_to_type(key, val)
         if val.kind_of? Array
           ArrayType.new key, self.convert_to_type(key, val[0])
@@ -80,11 +80,11 @@ module Yousei::OJMGenerator
       end
     end
 
-    class ArrayType < JsonTypeSwift
+    class ArrayType < SwiftType
       def initialize(key, val)
         super key, val
         @inner_type = val
-        @generic_type = JsonTypeSwift::convert_to_type("#{@symbol}_inarray", @inner_type)
+        @generic_type = SwiftType::convert_to_type("#{@symbol}_inarray", @inner_type)
       end
 
       def type_expression
@@ -146,7 +146,7 @@ module Yousei::OJMGenerator
       end
     end
 
-    class StringType < JsonTypeSwift
+    class StringType < SwiftType
       def default_value
         ''
       end
@@ -157,25 +157,25 @@ module Yousei::OJMGenerator
 
     end
 
-    class IntegerType < JsonTypeSwift
+    class IntegerType < SwiftType
       def default_value
         0
       end
     end
 
-    class DoubleType < JsonTypeSwift
+    class DoubleType < SwiftType
       def default_value
         0
       end
     end
 
-    class BoolType < JsonTypeSwift
+    class BoolType < SwiftType
       def default_value
         false
       end
     end
 
-    class CustomType < JsonTypeSwift
+    class CustomType < SwiftType
       def initialize(key, val)
         super(key, val)
         @class_name = type_expression
@@ -258,7 +258,7 @@ module Yousei::OJMGenerator
       def convert_attrs_to_types(attrs)
         ret = []
         attrs.each do |key, val|
-          ret << JsonTypeSwift::convert_to_type(key, val)
+          ret << SwiftType::convert_to_type(key, val)
         end
         ret
       end
