@@ -27,6 +27,8 @@ module Yousei::APIGenerator
         super
         generator = Yousei::OJMGenerator::Swift::SwiftOJMGenerator.new writer: @writer
         generator.generate opts[:def], namespace: opts[:prefix].to_s
+
+        @api_def = generator.replace_definitions(@api_def)
       end
 
       def create_api(opts)
@@ -69,7 +71,6 @@ module Yousei::APIGenerator
 
       def create_api_class(api_name, api_attrs)
         class_name =  api_class api_name
-
 
         line "public class #{class_name} : #{yousei_class :Base} {" do
           %w(body response).each do |name|

@@ -20,9 +20,9 @@ module Yousei::OJMGenerator
 
       def customize_definitions(definitions)
         return definitions unless @class_prefix
-        type_map = definitions.keys.reduce({}) {|t,x| t[x] = "#{@class_prefix}#{x}"; t }
-        definitions = replace_custom_type_name definitions, type_map
-        replace_definitions(definitions, type_map)
+        @type_map = definitions.keys.reduce({}) {|t,x| t[x] = "#{@class_prefix}#{x}"; t }
+        definitions = replace_custom_type_name definitions, @type_map
+        replace_definitions(definitions, @type_map)
       end
 
       def replace_custom_type_name(definitions, type_map)
@@ -33,7 +33,8 @@ module Yousei::OJMGenerator
         ret
       end
 
-      def replace_definitions(values, type_map)
+      def replace_definitions(values, type_map = nil)
+        type_map ||= @type_map
         return (type_map[values] || values) unless values.kind_of?(Array) || values.kind_of?(Hash)
         if values.kind_of? Array
           values.map { |x| replace_definitions(x, type_map) }
