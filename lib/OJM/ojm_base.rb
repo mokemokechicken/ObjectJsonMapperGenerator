@@ -11,16 +11,16 @@ module Yousei::OJMGenerator
     end
   end
 
-  class JsonType
+  class Variable
     include Common
     include Yousei
 
-    attr_accessor :key, :val, :optional
+    attr_accessor :ident, :type, :optional
 
-    def initialize(key, val)
-      @key = pure_symbol key
-      @val = val
-      @optional = optional? key
+    def initialize(ident, type)
+      @ident = pure_symbol ident
+      @type = type
+      @optional = optional? ident
     end
 
     def to_value_from(value_expression)

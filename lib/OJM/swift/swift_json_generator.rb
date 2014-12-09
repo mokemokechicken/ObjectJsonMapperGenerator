@@ -3,20 +3,20 @@
 module Yousei::OJMGenerator
   module Swift
 
-    class SwiftType < JsonType
-      def self.convert_to_type(key, val)
-        if val.kind_of? Array
-          ArrayType.new key, self.convert_to_type(key, val[0])
-        elsif val == 'String'
-          StringType.new key, val
-        elsif val == 'Int'
-          IntegerType.new key, val
-        elsif val == 'Double'
-          DoubleType.new key, val
-        elsif val == 'Bool'
-          BoolType.new key, val
+    class SwiftVariable < Variable
+      def self.create_variable(ident, type)
+        if type.kind_of? Array
+          ArrayType.new ident, self.create_variable(ident, type[0])
+        elsif type == 'String'
+          StringVariable.new ident, type
+        elsif type == 'Int'
+          IntegerVariable.new ident, type
+        elsif type == 'Double'
+          DoubleVariable.new ident, type
+        elsif type == 'Bool'
+          BoolVariable.new ident, type
         else
-          CustomType.new key, val
+          CustomVariable.new ident, type
         end
       end
 
@@ -80,11 +80,11 @@ module Yousei::OJMGenerator
       end
     end
 
-    class ArrayType < SwiftType
+    class ArrayType < SwiftVariable
       def initialize(key, val)
         super key, val
         @inner_type = val
-        @generic_type = SwiftType::convert_to_type("#{@symbol}_inarray", @inner_type)
+        @generic_type = SwiftVariable::create_variable("#{@symbol}_inarray", @inner_type)
       end
 
       def type_expression
@@ -106,7 +106,7 @@ module Yousei::OJMGenerator
       def to_optional_value_from(variable_expression, value_expression)
         out = BufferedOutputFormatter.new
         out.outputln "if let xx = #{value_expression} as? [#{@inner_type.type_in_nsdictionary}] {", '}' do
-          if @inner_type.kind_of? CustomType
+          if @inner_type.kind_of? CustomVariable
             out.outputln "#{variable_expression} = #{default_value_expression}"
             out.outputln 'for x in xx {', '}' do
               out.outputln "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
@@ -126,7 +126,7 @@ module Yousei::OJMGenerator
       def to_required_value_from(variable_expression, value_expression)
         out = BufferedOutputFormatter.new
         out.outputln "if let xx = #{value_expression} as? [#{@inner_type.type_in_nsdictionary}] {", '} else {' do
-          if @inner_type.kind_of? CustomType
+          if @inner_type.kind_of? CustomVariable
             out.outputln 'for x in xx {', '}' do
               out.outputln "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
                 out.outputln "#{variable_expression}.append(obj)"
@@ -146,7 +146,7 @@ module Yousei::OJMGenerator
       end
     end
 
-    class StringType < SwiftType
+    class StringVariable < SwiftVariable
       def default_value
         ''
       end
@@ -157,25 +157,25 @@ module Yousei::OJMGenerator
 
     end
 
-    class IntegerType < SwiftType
+    class IntegerVariable < SwiftVariable
       def default_value
         0
       end
     end
 
-    class DoubleType < SwiftType
+    class DoubleVariable < SwiftVariable
       def default_value
         0
       end
     end
 
-    class BoolType < SwiftType
+    class BoolVariable < SwiftVariable
       def default_value
         false
       end
     end
 
-    class CustomType < SwiftType
+    class CustomVariable < SwiftVariable
       def initialize(key, val)
         super(key, val)
         @class_name = type_expression
@@ -258,7 +258,7 @@ module Yousei::OJMGenerator
       def convert_attrs_to_types(attrs)
         ret = []
         attrs.each do |key, val|
-          ret << SwiftType::convert_to_type(key, val)
+          ret << SwiftVariable::create_variable(key, val)
         end
         ret
       end

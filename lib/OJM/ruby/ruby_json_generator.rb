@@ -3,20 +3,20 @@
 module Yousei::OJMGenerator
   module Ruby
 
-    class JsonTypeRuby < JsonType
-      def self.convert_to_type(key, val)
-        if val.kind_of? Array
-          ArrayType.new key, val
-        elsif val == 'String'
-          StringType.new key, val
-        elsif val == 'Int'
-          IntegerType.new key, val
-        elsif val == 'Double'
-          DoubleType.new key, val
-        elsif val == 'Bool'
-          BoolType.new key, val
+    class RubyVariable < Variable
+      def self.convert_to_variable(ident, type)
+        if type.kind_of? Array
+          ArrayVariable.new ident, type
+        elsif type == 'String'
+          StringVariable.new ident, type
+        elsif type == 'Int'
+          IntegerVariable.new ident, type
+        elsif type == 'Double'
+          DoubleVariable.new ident, type
+        elsif type == 'Bool'
+          BoolVariable.new ident, type
         else
-          CustomType.new key, val
+          CustomVariable.new ident, type
         end
       end
 
@@ -47,10 +47,10 @@ module Yousei::OJMGenerator
       end
     end
 
-    class ArrayType < JsonTypeRuby
+    class ArrayVariable < RubyVariable
       def initialize(key, val)
         super key, val
-        @generic_type = JsonTypeRuby::convert_to_type("#{@symbol}_inarray", val[0])
+        @generic_type = RubyVariable::convert_to_variable("#{@symbol}_inarray", val[0])
       end
 
       def default_value
@@ -62,7 +62,7 @@ module Yousei::OJMGenerator
       end
     end
 
-    class StringType < JsonTypeRuby
+    class StringVariable < RubyVariable
       def default_value
         ''
       end
@@ -76,7 +76,7 @@ module Yousei::OJMGenerator
       end
     end
 
-    class IntegerType < JsonTypeRuby
+    class IntegerVariable < RubyVariable
       def default_value
         0
       end
@@ -86,7 +86,7 @@ module Yousei::OJMGenerator
       end
     end
 
-    class DoubleType < JsonTypeRuby
+    class DoubleVariable < RubyVariable
       def default_value
         0
       end
@@ -96,7 +96,7 @@ module Yousei::OJMGenerator
       end
     end
 
-    class BoolType < JsonTypeRuby
+    class BoolVariable < RubyVariable
       def default_value
         false
       end
@@ -106,10 +106,10 @@ module Yousei::OJMGenerator
       end
     end
 
-    class CustomType < JsonTypeRuby
-      def initialize(key, val)
-        super(key, val)
-        @class_name = val
+    class CustomVariable < RubyVariable
+      def initialize(ident, type)
+        super(ident, type)
+        @class_name = type
       end
 
       def default_value_expression
@@ -131,7 +131,7 @@ module Yousei::OJMGenerator
 
       def with_namespace(namespace)
         if namespace
-          outputln "module #{namespace}", 'end' do
+          line "module #{namespace}", 'end' do
             super namespace
           end
         else
@@ -140,13 +140,13 @@ module Yousei::OJMGenerator
       end
 
       def output_common_functions
-        outputln File.read(File.expand_path('../ruby_common_scripts.rb', __FILE__)).split /\n/
+        line File.read(File.expand_path('../ruby_common_scripts.rb', __FILE__)).split /\n/
       end
 
-      def convert_attrs_to_types(attrs)
+      def convert_attrs_to_variable(attrs)
         ret = []
-        attrs.each do |key, val|
-          ret << JsonTypeRuby::convert_to_type(key, val)
+        attrs.each do |ident, type|
+          ret << RubyVariable::convert_to_variable(ident, type)
         end
         ret
       end
@@ -154,59 +154,59 @@ module Yousei::OJMGenerator
       # For Ruby
       def create_class(class_name, attrs)
         dpp attrs
-        types =  convert_attrs_to_types attrs
-        outputln "class #{class_name} < JsonGenEntityBase", 'end' do
+        variables = convert_attrs_to_variable attrs
+        line "class #{class_name} < JsonGenEntityBase", 'end' do
           # accessor
-          outputln 'attr_accessor ' + types.map {|t| ":#{t.key}"}. join(', ')
+          line 'attr_accessor ' + variables.map {|t| ":#{t.ident}"}. join(', ')
           new_line
-          make_constructor types
+          make_constructor variables
           new_line
-          make_to_json types
+          make_to_json variables
           new_line
-          make_from_json types
+          make_from_json variables
         end
       end
 
-      def make_constructor(types)
-        outputln 'def initialize', 'end' do
-          types.each do |value_type|
-            if value_type.optional
-              outputln "@#{value_type.key} = nil"
+      def make_constructor(variables)
+        line 'def initialize', 'end' do
+          variables.each do |var|
+            if var.optional
+              line "@#{var.ident} = nil"
             else
-              outputln "@#{value_type.key} = #{value_type.default_value_expression}"
+              line "@#{var.ident} = #{var.default_value_expression}"
             end
           end
         end
       end
 
-      def make_to_json(types)
-        outputln 'def to_json_hash', 'end' do
-          outputln 'hash = {}'
-          types.each do |value_type|
-            value_expression = "@#{value_type.key}"
-            convert_expression = value_type.to_hash_with value_expression
-            line = "hash[:#{value_type.key}] = #{convert_expression}"
-            if value_type.optional
-              line += " unless @#{value_type.key} == nil"
+      def make_to_json(variables)
+        line 'def to_json_hash', 'end' do
+          line 'hash = {}'
+          variables.each do |var|
+            value_expression = "@#{var.ident}"
+            convert_expression = var.to_hash_with value_expression
+            line = "hash[:#{var.ident}] = #{convert_expression}"
+            if var.optional
+              line += " unless @#{var.ident} == nil"
             end
-            outputln line
+            line line
           end
-          outputln 'encode(hash)'
+          line 'encode(hash)'
         end
       end
 
-      def make_from_json(types)
-        outputln 'def from_json_hash(hash)', 'end' do
-          types.each do |value_type|
-            value_expression = "hash['#{value_type.key}']"
-            convert_expression = value_type.to_value_from(value_expression)
-            line = "@#{value_type.key} = #{convert_expression}"
-            if value_type.optional
-              line += " if hash.include? '#{value_type.key}'"
+      def make_from_json(variables)
+        line 'def from_json_hash(hash)', 'end' do
+          variables.each do |var|
+            value_expression = "hash['#{var.ident}']"
+            convert_expression = var.to_value_from(value_expression)
+            line = "@#{var.ident} = #{convert_expression}"
+            if var.optional
+              line += " if hash.include? '#{var.ident}'"
             end
-            outputln line
+            line line
           end
-          outputln 'self'
+          line 'self'
         end
       end
     end
