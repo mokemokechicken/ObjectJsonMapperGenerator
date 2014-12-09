@@ -21,11 +21,11 @@ module Yousei::OJMGenerator
       end
 
       def variable_name_in_code
-        key.to_s.camelize false
+        ident.sv
       end
 
       def type_expression
-        val
+        type
       end
 
       def type_in_nsdictionary
@@ -43,8 +43,8 @@ module Yousei::OJMGenerator
       def to_hash_with(variable_expression, value_expression)
         if @optional
           out = BufferedOutputFormatter.new
-          out.outputln "if let x = #{value_expression} {", '}' do
-            out.outputln to_required_hash_with variable_expression, 'x'
+          out.line "if let x = #{value_expression} {", '}' do
+            out.line to_required_hash_with variable_expression, 'x'
           end
           out.string_array
         else
@@ -70,20 +70,20 @@ module Yousei::OJMGenerator
 
       def to_required_value_from(variable_expression, value_expression)
         out = BufferedOutputFormatter.new
-        out.outputln "if let x = #{optional_cast_from(value_expression)} {", '} else {' do
-          out.outputln "#{variable_expression} = x"
+        out.line "if let x = #{optional_cast_from(value_expression)} {", '} else {' do
+          out.line "#{variable_expression} = x"
         end
-        out.outputln nil, '}' do
-          out.outputln 'return nil'
+        out.line nil, '}' do
+          out.line 'return nil'
         end
         out.string_array
       end
     end
 
     class ArrayType < SwiftVariable
-      def initialize(key, val)
-        super key, val
-        @inner_type = val
+      def initialize(ident, type)
+        super ident, type
+        @inner_type = type
         @generic_type = SwiftVariable::create_variable("#{@symbol}_inarray", @inner_type)
       end
 
@@ -105,19 +105,19 @@ module Yousei::OJMGenerator
 
       def to_optional_value_from(variable_expression, value_expression)
         out = BufferedOutputFormatter.new
-        out.outputln "if let xx = #{value_expression} as? [#{@inner_type.type_in_nsdictionary}] {", '}' do
+        out.line "if let xx = #{value_expression} as? [#{@inner_type.type_in_nsdictionary}] {", '}' do
           if @inner_type.kind_of? CustomVariable
-            out.outputln "#{variable_expression} = #{default_value_expression}"
-            out.outputln 'for x in xx {', '}' do
-              out.outputln "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
-                out.outputln "#{variable_expression}!.append(obj)"
+            out.line "#{variable_expression} = #{default_value_expression}"
+            out.line 'for x in xx {', '}' do
+              out.line "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
+                out.line "#{variable_expression}!.append(obj)"
               end
-              out.outputln nil, '}' do
-                out.outputln 'return nil'
+              out.line nil, '}' do
+                out.line 'return nil'
               end
             end
           else
-            out.outputln "#{variable_expression} = xx"
+            out.line "#{variable_expression} = xx"
           end
         end
         out.string_array
@@ -125,22 +125,22 @@ module Yousei::OJMGenerator
 
       def to_required_value_from(variable_expression, value_expression)
         out = BufferedOutputFormatter.new
-        out.outputln "if let xx = #{value_expression} as? [#{@inner_type.type_in_nsdictionary}] {", '} else {' do
+        out.line "if let xx = #{value_expression} as? [#{@inner_type.type_in_nsdictionary}] {", '} else {' do
           if @inner_type.kind_of? CustomVariable
-            out.outputln 'for x in xx {', '}' do
-              out.outputln "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
-                out.outputln "#{variable_expression}.append(obj)"
+            out.line 'for x in xx {', '}' do
+              out.line "if let obj = #{@inner_type.optional_cast_from('x')} {", '} else {' do
+                out.line "#{variable_expression}.append(obj)"
               end
-              out.outputln nil, '}' do
-                out.outputln 'return nil'
+              out.line nil, '}' do
+                out.line 'return nil'
               end
             end
           else
-            out.outputln "#{variable_expression} = xx"
+            out.line "#{variable_expression} = xx"
           end
         end
-        out.outputln nil, '}' do
-          out.outputln 'return nil'
+        out.line nil, '}' do
+          out.line 'return nil'
         end
         out.string_array
       end
@@ -176,8 +176,8 @@ module Yousei::OJMGenerator
     end
 
     class CustomVariable < SwiftVariable
-      def initialize(key, val)
-        super(key, val)
+      def initialize(ident, type)
+        super(ident, type)
         @class_name = type_expression
       end
 
@@ -203,11 +203,11 @@ module Yousei::OJMGenerator
 
       def to_required_value_from(variable_expression, value_expression)
         out = BufferedOutputFormatter.new
-        out.outputln 'if let x = ' + optional_cast_from("(#{value_expression} as? #{type_in_nsdictionary})")+ ' {', '} else {' do
-          out.outputln "#{variable_expression} = x"
+        out.line 'if let x = ' + optional_cast_from("(#{value_expression} as? #{type_in_nsdictionary})")+ ' {', '} else {' do
+          out.line "#{variable_expression} = x"
         end
-        out.outputln nil, '}' do
-          out.outputln 'return nil'
+        out.line nil, '}' do
+          out.line 'return nil'
         end
         out.string_array
       end
@@ -217,6 +217,7 @@ module Yousei::OJMGenerator
 
     class SwiftOJMGenerator < GeneratorBase
       def initialize(opts = {})
+        Yousei::enable_swift_feature
         super(opts)
         @indent_width = 4
       end
@@ -231,11 +232,16 @@ module Yousei::OJMGenerator
       def customize_definitions(definitions)
         return definitions unless @class_prefix
         type_map = definitions.keys.reduce({}) {|t,x| t[x] = "#{@class_prefix}#{x}"; t }
+        definitions = replace_custom_type_name definitions, type_map
+        replace_definitions(definitions, type_map)
+      end
+
+      def replace_custom_type_name(definitions, type_map)
         ret = {}
         definitions.each do |klass, v|
           ret[type_map[klass]] = v
         end
-        replace_definitions(ret, type_map)
+        ret
       end
 
       def replace_definitions(values, type_map)
@@ -252,13 +258,13 @@ module Yousei::OJMGenerator
       end
 
       def output_common_functions
-        outputln File.read(File.expand_path('../swift_common_scripts.swift', __FILE__)).split /\n/
+        line File.read(File.expand_path('../swift_common_scripts.swift', __FILE__)).split /\n/
       end
 
-      def convert_attrs_to_types(attrs)
+      def convert_attrs_to_variables(attrs)
         ret = []
-        attrs.each do |key, val|
-          ret << SwiftVariable::create_variable(key, val)
+        attrs.each do |ident, type|
+          ret << SwiftVariable::create_variable(ident, type)
         end
         ret
       end
@@ -266,54 +272,54 @@ module Yousei::OJMGenerator
       # For Swift
       def create_class(class_name, attrs)
         dpp attrs
-        types =  convert_attrs_to_types attrs
-        outputln "public class #{class_name} : JsonGenEntityBase {", '}' do
-          make_member_variables types
+        variables =  convert_attrs_to_variables attrs
+        line "public class #{class_name} : JsonGenEntityBase {", '}' do
+          make_member_variables variables
           new_line
-          make_to_json types
+          make_to_json variables
           new_line
-          make_from_json class_name, types
+          make_from_json class_name, variables
         end
       end
 
-      def make_member_variables(types)
-        types.each do |t|
-          if t.optional
-            outputln "var #{t.variable_name_in_code}: #{t.type_expression}?"
+      def make_member_variables(variables)
+        variables.each do |var|
+          if var.optional
+            line "var #{var.variable_name_in_code}: #{var.type_expression}?"
           else
-            outputln "var #{t.variable_name_in_code}: #{t.type_expression} = #{t.default_value_expression}"
+            line "var #{var.variable_name_in_code}: #{var.type_expression} = #{var.default_value_expression}"
           end
         end
       end
 
-      # @param types Array<JsonTypeSwift>
-      def make_to_json(types)
-        outputln 'public override func toJsonDictionary() -> NSDictionary {', '}' do
-          outputln 'var hash = NSMutableDictionary()'
-          types.each do |t|
-            outputln "// Encode #{t.variable_name_in_code}"
-            value_expression = "self.#{t.variable_name_in_code}"
-            variable_expression = "hash[\"#{t.key}\"]"
-            outputln t.to_hash_with variable_expression, value_expression
+      # @param variables Array<JsonTypeSwift>
+      def make_to_json(variables)
+        line 'public override func toJsonDictionary() -> NSDictionary {', '}' do
+          line 'var hash = NSMutableDictionary()'
+          variables.each do |var|
+            line "// Encode #{var.variable_name_in_code}"
+            value_expression = "self.#{var.variable_name_in_code}"
+            variable_expression = "hash[\"#{var.ident}\"]"
+            line var.to_hash_with variable_expression, value_expression
           end
-          outputln 'return hash'
+          line 'return hash'
         end
       end
 
-      def make_from_json(class_name, types)
-        outputln "public override class func fromJsonDictionary(hash: NSDictionary?) -> #{class_name}? {", '}' do
-          outputln 'if let h = hash {', '} else {' do
-            outputln "var this = #{class_name}()"
-            types.each do |t|
-              outputln "// Decode #{t.variable_name_in_code}"
-              value_expression = "h[\"#{t.key}\"]"
-              variable_expression = "this.#{t.variable_name_in_code}"
-              outputln t.to_value_from(variable_expression, value_expression)
+      def make_from_json(class_name, variables)
+        line "public override class func fromJsonDictionary(hash: NSDictionary?) -> #{class_name}? {" do
+          line 'if let h = hash {', '} else {' do
+            line "var this = #{class_name}()"
+            variables.each do |var|
+              line "// Decode #{var.variable_name_in_code}"
+              value_expression = "h[\"#{var.ident}\"]"
+              variable_expression = "this.#{var.variable_name_in_code}"
+              line var.to_value_from(variable_expression, value_expression)
             end
-            outputln 'return this'
+            line 'return this'
           end
-          outputln nil, '}' do
-            outputln 'return nil'
+          line nil, '}' do
+            line 'return nil'
           end
         end
       end
