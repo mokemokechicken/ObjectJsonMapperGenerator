@@ -46,16 +46,16 @@ api:
       count: Int
       tags: [Tag]
 
-#  SamplePatch:
-#    patch: path/to/{id}/{key}
-#    body: Item
-#    response: [String]
+  SamplePatch:
+    patch: path/to/{id}/{key}
+    body: Item
+    response: [String]
 
-#  SamplePostBinary:
-#    post: post/to/binary
-#    body:
-#    response:
-#      url: String
+  SamplePostBinary:
+    post: post/to/binary
+    body:
+    response:
+      url: String
 
 entity:
   Tag:

@@ -112,12 +112,13 @@ module Yousei::APIGenerator
                 required_param_list << var
               end
             end
-
-            params_keys = api_attrs['params'].keys
-            path_placeholder_keys(api_attrs).each do |key|
-              required_param_list << SwiftVariable::create_variable(key, 'String') unless params_keys.include?(key)
-            end
           end
+
+          params_keys = (api_attrs['params'] || {}).keys
+          path_placeholder_keys(api_attrs).each do |key|
+            required_param_list << SwiftVariable::create_variable(key, 'String') unless params_keys.include?(key)
+          end
+
           default_value = ' = nil'
           param_list = required_param_list + optional_param_list
           args_expression = param_list.map {|v|
@@ -151,7 +152,7 @@ module Yousei::APIGenerator
 
 
       def create_func_call(api_name, api_attrs)
-        if api_attrs['body'] && required_body_object?(api_attrs)
+        if required_body_object?(api_attrs)
           create_func_call_with_body(api_name, api_attrs)
         else
           create_func_call_normal(api_name, api_attrs)
@@ -167,7 +168,7 @@ module Yousei::APIGenerator
 
       def create_func_call_with_body(api_name, api_attrs)
         rvar, handler_type = rvar_and_handler_type api_attrs
-        bvar = SwiftVariable::create_variable 'body', api_attrs['body']
+        bvar = SwiftVariable::create_variable 'body', (api_attrs['body'] || 'NSData')
         line "public func call(object: #{bvar.type_expression}, completionHandler: #{handler_type}) {" do
           create_do_request rvar, true
         end

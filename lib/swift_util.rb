@@ -53,6 +53,8 @@ module Yousei::Swift
         DoubleVariable.new ident, type
       elsif type == 'Bool'
         BoolVariable.new ident, type
+      elsif type == 'NSData'
+        SwiftTypeVariable.new ident, type
       else
         CustomVariable.new ident, type
       end
@@ -120,6 +122,10 @@ module Yousei::Swift
         out.line 'return nil'
       end
       out.string_array
+    end
+
+    def from_data_expression(value_expression)
+      "JsonGenObjectFromJsonData(#{value_expression})"
     end
   end
 
@@ -201,7 +207,6 @@ module Yousei::Swift
     def default_value_expression
       '""'
     end
-
   end
 
   class IntegerVariable < SwiftVariable
@@ -219,6 +224,12 @@ module Yousei::Swift
   class BoolVariable < SwiftVariable
     def default_value
       false
+    end
+  end
+
+  class SwiftTypeVariable < SwiftVariable
+    def default_value
+      "#{type}()"
     end
   end
 
