@@ -230,7 +230,7 @@ module Yousei::OJMGenerator
 
       def customize_definitions(definitions)
         return definitions unless @class_prefix
-        type_map = definitions.keys.map { |c| [c, "#{@class_prefix}#{c}"] }.to_h
+        type_map = definitions.keys.reduce({}) {|t,x| t[x] = "#{@class_prefix}#{x}"; t }
         ret = {}
         definitions.each do |klass, v|
           ret[type_map[klass]] = v

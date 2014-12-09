@@ -87,9 +87,9 @@ public class YOUSEI_API_GENERATOR_PREFIX_Info {
     
     public let method: HTTPMethod
     public let path: String
-    public let meta : [String:String]
+    public let meta : [String:AnyObject]
     
-    public init(method: HTTPMethod, path: String, meta: [String:String]) {
+    public init(method: HTTPMethod, path: String, meta: [String:AnyObject]) {
         self.method = method
         self.path = path
         self.meta = meta
