@@ -133,20 +133,31 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
         self.apiRequest = YOUSEI_API_GENERATOR_PREFIX_Request(info: info)
     }
     
-    func setBody(object: JsonGenEntityBase) {
+    func setBody(object: AnyObject) {
         // set body if needed
         let method = apiRequest.info.method
-        if method == .POST || method == .PUT || method == .PATCH {
-            switch(config.bodyFormat) {
-            case .FormURLEncoded:
-                let str = URLUtil.makeQueryString(object.toJsonDictionary() as [String:AnyObject])
-                self.body = str.dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: false)
-                
-            case .JSON:
-                self.body = object.toJsonData()
-            }
-            apiRequest.request.HTTPBody = body
+        if !(method == .POST || method == .PUT || method == .PATCH) {
+            return
         }
+
+        switch(config.bodyFormat, object) {
+        case (.FormURLEncoded, let x as JsonGenEntityBase):
+            let str = URLUtil.makeQueryString(x.toJsonDictionary() as [String:AnyObject])
+            self.body = str.dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: false)
+            
+        case (.JSON, let x as JsonGenEntityBase):
+            self.body = x.toJsonData()
+            
+        case (.JSON, let x as [JsonGenEntityBase]):
+            self.body = JsonGenEntityBase.toJsonData(x)
+
+        case (_, let x as NSData):
+            self.body = x
+
+        default:
+            return
+        }
+        apiRequest.request.HTTPBody = self.body
     }
 
     func replacePathPlaceholder(path: String, key: String) -> String {
@@ -158,7 +169,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
         return path
     }
     
-    func doRequest(object: JsonGenEntityBase, completionHandler: CompletionHandler) {
+    func doRequest(object: AnyObject, completionHandler: CompletionHandler) {
         setBody(object)
         doRequest(completionHandler)
     }

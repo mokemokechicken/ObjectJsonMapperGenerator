@@ -1,12 +1,15 @@
 api_prefix: QiitaAPI
 entity_prefix: Qiita
 
+alias:
+  pager: &pager
+    page?: Int
+    per_page?: Int
+
 api:
   ListItem:
     get: items
-    params:
-      page?: Int
-      per_page?: Int
+    params: *pager
     response: [Item]
 
   GetItem:
@@ -33,6 +36,26 @@ api:
       tags: [Tag]
       title: String
 
+  SamplePut:
+    put: path/to/{id}/{key}
+    params:
+      <<: *pager
+      where: String
+    body: [Item]
+    response:
+      count: Int
+      tags: [Tag]
+
+#  SamplePatch:
+#    patch: path/to/{id}/{key}
+#    body: Item
+#    response: [String]
+
+#  SamplePostBinary:
+#    post: post/to/binary
+#    body:
+#    response:
+#      url: String
 
 entity:
   Tag:

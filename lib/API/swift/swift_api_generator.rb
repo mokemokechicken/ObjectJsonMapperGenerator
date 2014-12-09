@@ -62,9 +62,11 @@ module Yousei::APIGenerator
 
 
         line "public class #{class_name} : #{yousei_class :Base} {" do
-          if api_attrs['body'].kind_of?(Hash) && required_body_object?(api_attrs)
-            replace_and_create_body_entity(api_name, api_attrs)
-            new_line
+          %w(body response).each do |name|
+            if api_attrs[name].kind_of?(Hash) && required_body_object?(api_attrs)
+              replace_and_create_entity(name, api_attrs)
+              new_line
+            end
           end
 
           create_func_init api_name, api_attrs
@@ -75,11 +77,11 @@ module Yousei::APIGenerator
         end
       end
 
-      def replace_and_create_body_entity(api_name, api_attrs)
-        hash = api_attrs['body']
-        api_attrs['body'] = body_type_name = 'Body'
+      def replace_and_create_entity(name, api_attrs)
+        hash = api_attrs[name]
+        api_attrs[name] = type_name = name.camelize
         entity_generator = Yousei::OJMGenerator::Swift::SwiftOJMGenerator.new indent: @indent, writer: @writer
-        entity_generator.create_class body_type_name, hash
+        entity_generator.create_class type_name, hash
       end
 
       def create_func_init(api_name, api_attrs)
@@ -165,8 +167,8 @@ module Yousei::APIGenerator
 
       def create_func_call_with_body(api_name, api_attrs)
         rvar, handler_type = rvar_and_handler_type api_attrs
-        body_type = api_attrs['body'].to_s
-        line "public func call(object: #{body_type}, completionHandler: #{handler_type}) {" do
+        bvar = SwiftVariable::create_variable 'body', api_attrs['body']
+        line "public func call(object: #{bvar.type_expression}, completionHandler: #{handler_type}) {" do
           create_do_request rvar, true
         end
       end
