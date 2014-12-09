@@ -37,7 +37,7 @@ entity:
     coediting: Bool
     created_at: String
     id: String
-    _private?: Bool
+    private?: Bool
     tags: [Tag]
     title: String
     updated_at: String
