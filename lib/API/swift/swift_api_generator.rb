@@ -2,6 +2,10 @@ module Yousei::APIGenerator
   module Swift
 
     module Util
+      def entity_class(s)
+        "#{@entity_class_prefix}#{s}"
+      end
+
       def api_class(s)
         "#{@api_class_prefix}#{s}"
       end
@@ -13,7 +17,9 @@ module Yousei::APIGenerator
 
 
     class SwiftGenerator < GeneratorBase
-      TEMPLATE_YOUSEI_PREFIX = 'YOUSEI_API_GENERATOR_PREFIX_'
+      TEMPLATE_YOUSEI_API_PREFIX = 'YOUSEI_API_GENERATOR_PREFIX_'
+      TEMPLATE_YOUSEI_ENTITY_PREFIX = 'YOUSEI_ENTITY_PREFIX_'
+
 
       include Util
       include Yousei::Swift
@@ -28,6 +34,7 @@ module Yousei::APIGenerator
         generator = Yousei::OJMGenerator::Swift::SwiftOJMGenerator.new writer: @writer
         generator.generate opts[:def], namespace: opts[:prefix].to_s
 
+        @entity_class_prefix = opts[:prefix].to_s
         @api_def = generator.replace_definitions(@api_def)
       end
 
@@ -38,7 +45,7 @@ module Yousei::APIGenerator
 
         definitions = opts[:def]
 
-        output_api_base_script(@yousei_class_prefix)
+        output_api_base_script(@api_class_prefix, @entity_class_prefix)
 
         create_factory definitions
         definitions.each do |api_name, api_attrs|
@@ -47,9 +54,10 @@ module Yousei::APIGenerator
         end
       end
 
-      def output_api_base_script(prefix)
+      def output_api_base_script(api_prefix, entity_prefix)
         template = File.read(File.expand_path('../common.swift', __FILE__))
-        template.gsub!(/#{TEMPLATE_YOUSEI_PREFIX}/, prefix)
+        template.gsub!(/#{TEMPLATE_YOUSEI_API_PREFIX}/, api_prefix)
+        template.gsub!(/#{TEMPLATE_YOUSEI_ENTITY_PREFIX}/, entity_prefix)
         line template.split /\n/
       end
 
@@ -92,6 +100,7 @@ module Yousei::APIGenerator
         hash = api_attrs[name]
         api_attrs[name] = type_name = name.camelize
         entity_generator = Yousei::OJMGenerator::Swift::SwiftOJMGenerator.new indent: @indent, writer: @writer
+        entity_generator.entity_class_prefix = @entity_class_prefix
         entity_generator.create_class type_name, hash
       end
 

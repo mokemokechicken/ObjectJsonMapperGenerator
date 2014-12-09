@@ -139,15 +139,15 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
         }
 
         switch(config.bodyFormat, object) {
-        case (.FormURLEncoded, let x as JsonGenEntityBase):
+        case (.FormURLEncoded, let x as YOUSEI_ENTITY_PREFIX_EntityBase):
             let str = URLUtil.makeQueryString(x.toJsonDictionary() as [String:AnyObject])
             self.body = str.dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: false)
             
-        case (.JSON, let x as JsonGenEntityBase):
+        case (.JSON, let x as YOUSEI_ENTITY_PREFIX_EntityBase):
             self.body = x.toJsonData()
             
-        case (.JSON, let x as [JsonGenEntityBase]):
-            self.body = JsonGenEntityBase.toJsonData(x)
+        case (.JSON, let x as [YOUSEI_ENTITY_PREFIX_EntityBase]):
+            self.body = YOUSEI_ENTITY_PREFIX_EntityBase.toJsonData(x)
 
         case (_, let x as NSData):
             self.body = x

@@ -2,8 +2,22 @@
 
 module Yousei::OJMGenerator
   module Swift
+    module Util
+      def entity_class(s)
+        "#{@entity_class_prefix}#{s}"
+      end
+
+      def yousei_class(s)
+        "#{@yousei_class_prefix}#{s}"
+      end
+    end
+
     class SwiftOJMGenerator < GeneratorBase
+      TEMPLATE_YOUSEI_PREFIX = 'YOUSEI_ENTITY_PREFIX_'
+      attr_accessor :entity_class_prefix
+
       include Yousei::Swift
+      include Util
 
       def initialize(opts = {})
         enable_swift_feature
@@ -15,6 +29,8 @@ module Yousei::OJMGenerator
       def with_namespace(namespace)
         # Namespace isn't supported
         @class_prefix = namespace
+        @entity_class_prefix = @class_prefix
+        @yousei_class_prefix = @class_prefix
         super namespace
       end
 
@@ -53,7 +69,9 @@ module Yousei::OJMGenerator
       end
 
       def output_common_functions
-        line File.read(File.expand_path('../swift_common_scripts.swift', __FILE__)).split /\n/
+        template = File.read(File.expand_path('../swift_common_scripts.swift', __FILE__))
+        template.gsub!(/#{TEMPLATE_YOUSEI_PREFIX}/, @class_prefix)
+        line template.split /\n/
       end
 
       def convert_attrs_to_variables(attrs)
@@ -67,7 +85,7 @@ module Yousei::OJMGenerator
       # For Swift
       def create_class(class_name, attrs)
         variables =  convert_attrs_to_variables attrs
-        line "public class #{class_name} : JsonGenEntityBase {", '}' do
+        line "public class #{class_name} : #{entity_class :EntityBase} {", '}' do
           make_member_variables variables
           new_line
           make_to_json variables
