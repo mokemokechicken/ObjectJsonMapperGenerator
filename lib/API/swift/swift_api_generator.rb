@@ -59,13 +59,27 @@ module Yousei::APIGenerator
 
       def create_api_class(api_name, api_attrs)
         class_name =  api_class api_name
+
+
         line "public class #{class_name} : #{yousei_class :Base} {" do
+          if api_attrs['body'].kind_of?(Hash) && required_body_object?(api_attrs)
+            replace_and_create_body_entity(api_name, api_attrs)
+            new_line
+          end
+
           create_func_init api_name, api_attrs
           new_line
           create_func_setup api_name, api_attrs
           new_line
           create_func_call api_name, api_attrs
         end
+      end
+
+      def replace_and_create_body_entity(api_name, api_attrs)
+        hash = api_attrs['body']
+        api_attrs['body'] = body_type_name = 'Body'
+        entity_generator = Yousei::OJMGenerator::Swift::SwiftOJMGenerator.new indent: @indent, writer: @writer
+        entity_generator.create_class body_type_name, hash
       end
 
       def create_func_init(api_name, api_attrs)
@@ -143,16 +157,38 @@ module Yousei::APIGenerator
       end
 
       def create_func_call_normal(api_name, api_attrs)
-        rvar = SwiftVariable::create_variable 'response', api_attrs['response']
-        line "public func call(completionHandler: (#{yousei_class :Response}, #{rvar.type_expression}?) -> Void) {" do
-          line 'doRequest() { response in', '}' do
-            line "completionHandler(response, #{rvar.from_data_expression 'response.data'} as? #{rvar.type_expression})"
-          end
+        rvar, handler_type = rvar_and_handler_type api_attrs
+        line "public func call(completionHandler: (#{handler_type}) {" do
+          create_do_request rvar, false
         end
       end
 
       def create_func_call_with_body(api_name, api_attrs)
+        rvar, handler_type = rvar_and_handler_type api_attrs
+        body_type = api_attrs['body'].to_s
+        line "public func call(object: #{body_type}, completionHandler: #{handler_type}) {" do
+          create_do_request rvar, true
+        end
+      end
 
+      def rvar_and_handler_type(api_attrs)
+        rvar = api_attrs['response'] ? SwiftVariable::create_variable('response', api_attrs['response']) : nil
+        handler_type = if rvar
+                         "(#{yousei_class :Response}, #{rvar.type_expression}?) -> Void"
+                       else
+                         "(#{yousei_class :Response}) -> Void"
+                       end
+        [rvar, handler_type]
+      end
+
+      def create_do_request(rvar, with_object = false)
+        line "doRequest(#{'object' if with_object}) { response in", '}' do
+          if rvar
+            line "completionHandler(response, #{rvar.from_data_expression 'response.data'} as? #{rvar.type_expression})"
+          else
+            line 'completionHandler(response)'
+          end
+        end
       end
 
       ######################## Helper ################################

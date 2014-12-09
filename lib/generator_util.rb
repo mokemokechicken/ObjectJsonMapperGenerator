@@ -1,8 +1,8 @@
 module Yousei
   module OutputFormatter
     def initialize_formatter(opts={})
-      @indent_width = 4
-      @indent = 0
+      @indent_width = opts[:indent_width] || 4
+      @indent = opts[:indent] || 0
       @writer = opts[:writer] || STDOUT
       @debug_output = opts[:debug_output] || STDERR
     end
