@@ -1,0 +1,92 @@
+api_prefix: QiitaAPI
+entity_prefix: Qiita
+
+alias:
+  pager: &pager
+    page?: Int
+    per_page?: Int
+
+api:
+  ListItem:
+    get: items
+    params: *pager
+    response: [Item]
+
+  GetItem:
+    get: items/{id}
+    response: Item
+
+  PostItem:
+    post: items
+    body:
+      body: String
+      coediting: Bool
+      gist?: Bool
+      private: Bool
+      tags: [Tag]
+      title: String
+      tweet?: Bool
+
+  PatchItem:
+    patch: items/{id}
+    body:
+      body: String
+      coediting: Bool
+      private: Bool
+      tags: [Tag]
+      title: String
+
+  SamplePut:
+    put: path/to/{id}/{key}
+    params:
+      <<: *pager
+      where: String
+    body: [Item]
+    response:
+      count: Int
+      tags: [Tag]
+
+  SamplePatch:
+    patch: path/to/{id}/{key}
+    body: Item
+    response: [String]
+
+  SamplePostBinary:
+    post: post/to/binary
+    body:
+    response:
+      url: String
+
+entity:
+  Tag:
+    name: String
+    versions: [String]
+
+  Item:
+    body: String
+    coediting: Bool
+    created_at: String
+    id: String
+    private?: Bool
+    tags: [Tag]
+    title: String
+    updated_at: String
+    url: String
+    user: User
+
+  User:
+    description?: String
+    facebook_id?: String
+    followees_count: Int
+    followers_count: Int
+    github_login_name?: String
+    id: String
+    items_count: Int
+    linkedin_id?: String
+    location?: String
+    name?: String
+    organization?: String
+    profile_image_url?: String
+    twitter_screen_name?: String
+    website_url?: String
+
