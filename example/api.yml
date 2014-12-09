@@ -5,12 +5,14 @@ api:
   ListItem:
     get: items
     params:
-      page: Int
-      per_page: Int
+      page?: Int
+      per_page?: Int
     response: [User]
 
   GetItem:
-    get: items/{id}
+    get: items/{id}/{day}
+    params:
+      id: Int
     response: Item
 
   PostItem:

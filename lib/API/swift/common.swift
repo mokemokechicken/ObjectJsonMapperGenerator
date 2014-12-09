@@ -148,6 +148,15 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
             apiRequest.request.HTTPBody = body
         }
     }
+
+    func replacePathPlaceholder(path: String, key: String) -> String {
+        if let x:AnyObject = query[key] {
+            query.removeValueForKey(key)
+            return path.stringByReplacingOccurrencesOfString(
+                "{\(key)}", withString: URLUtil.escape("\(x)"))
+        }
+        return path
+    }
     
     func doRequest(object: JsonGenEntityBase, completionHandler: CompletionHandler) {
         setBody(object)

@@ -3,8 +3,10 @@
 module Yousei::OJMGenerator
   module Swift
     class SwiftOJMGenerator < GeneratorBase
+      include Yousei::Swift
+
       def initialize(opts = {})
-        Yousei::Swift::enable_swift_feature
+        enable_swift_feature
         super(opts)
         @indent_width = 4
       end
@@ -51,7 +53,7 @@ module Yousei::OJMGenerator
       def convert_attrs_to_variables(attrs)
         ret = []
         attrs.each do |ident, type|
-          ret << Yousei::Swift::SwiftVariable::create_variable(ident, type)
+          ret << SwiftVariable::create_variable(ident, type)
         end
         ret
       end

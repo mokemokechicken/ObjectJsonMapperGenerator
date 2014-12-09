@@ -36,7 +36,7 @@ module Yousei::Swift
     alias_method :sl, :to_swift_literal
   end
 
-  def self.enable_swift_feature
+  def enable_swift_feature
     Object.class_eval { include Yousei::Swift::SwiftUtil }
   end
 
@@ -60,6 +60,11 @@ module Yousei::Swift
 
     def variable_name_in_code
       ident.sv
+    end
+    alias_method :code_name, :variable_name_in_code
+
+    def type_expression_with_optional
+      @optional ? "#{type_expression}?" : type_expression
     end
 
     def type_expression

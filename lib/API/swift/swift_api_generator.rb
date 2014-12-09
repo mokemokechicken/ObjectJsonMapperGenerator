@@ -1,5 +1,6 @@
 module Yousei::APIGenerator
   module Swift
+
     module Util
       def api_class(s)
         "#{@api_class_prefix}#{s}"
@@ -13,9 +14,10 @@ module Yousei::APIGenerator
 
     class SwiftGenerator < GeneratorBase
       include Util
+      include Yousei::Swift
 
       def generate(definitions, opts = nil)
-        Yousei::Swift::enable_swift_feature
+        enable_swift_feature
         super definitions, opts
       end
 
@@ -91,16 +93,52 @@ module Yousei::APIGenerator
       end
 
       def create_func_setup(api_name, api_attrs)
-        param_list = []
-        if api_attrs[:params]
-          api_attrs[:params].each do |key, type|
+        def setup_query_variable(api_name, api_attrs)
+          required_param_list = []
+          optional_param_list = []
+          if api_attrs['params']
+            api_attrs['params'].each do |ident, type|
+              var = SwiftVariable::create_variable(ident, type)
+              if var.optional
+                optional_param_list << var
+              else
+                required_param_list << var
+              end
+            end
 
+            params_keys = api_attrs['params'].keys
+            path_placeholder_keys(api_attrs).each do |key|
+              required_param_list << SwiftVariable::create_variable(key, 'String') unless params_keys.include?(key)
+            end
           end
+          default_value = ' = nil'
+          param_list = required_param_list + optional_param_list
+          args_expression = param_list.map {|v|
+            "##{v.code_name}: #{v.type_expression_with_optional}#{default_value if v.optional}"
+          }.join(', ')
 
+          line "public func setup(#{args_expression}) -> #{api_class api_name} {" do
+            line 'query = [String:AnyObject]()'
+            required_param_list.each do |var|
+              line "query[\"#{var.ident}\"] = #{var.code_name}"
+            end
+            optional_param_list.each do |var|
+              line "if let x = #{var.code_name} { query[\"#{var.ident}\"] = x }"
+            end
+          end
         end
-        line "public func setup() {" do
 
+        setup_query_variable(api_name, api_attrs)
+
+        line 'var path = apiRequest.info.path'
+        path_placeholder_keys(api_attrs).each do |key|
+          line "path = replacePathPlaceholder(path, key: \"#{key}\")"
         end
+      end
+
+      def path_placeholder_keys(api_attrs)
+        _, path = method_and_path api_attrs
+        path.scan(/\{([^}]+)\}/).map {|x| x[0]}
       end
 
       def create_func_call(api_name, api_attrs)
