@@ -53,8 +53,8 @@ module Yousei::DataServiceGenerator
         output_ds_base_script(@ds_class_prefix, @api_class_prefix, @entity_class_prefix)
         new_line
         create_service_locator @api_def
-        new_line
-        create_data_service_class @api_def
+
+        create_data_service_class_all @api_def
       end
 
       def output_ds_base_script(ds_prefix, api_prefix, entity_prefix)
@@ -82,8 +82,15 @@ module Yousei::DataServiceGenerator
         end
       end
 
-      def create_data_service_class(api_def)
-        
+      def create_data_service_class_all(api_def)
+        api_def.each do |api_name, api_attrs|
+          new_line
+          create_data_service_class api_name, api_attrs
+        end
+      end
+
+      def create_data_service_class(api_name, api_attrs)
+
       end
     end
   end
