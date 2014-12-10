@@ -96,7 +96,7 @@ module Yousei::DataServiceGenerator
 
       def create_data_service_class(api_name, api_attrs)
         rvar = rvar_or_nsnull api_attrs
-        line "public class #{ds_class api_name}<ET:#{rvar.type_expression}> : #{ds_class ''}<ET> {" do
+        line "public class #{ds_class api_name}<ET> : #{ds_class ''}<ET> {" do
           line "public typealias ET = #{rvar.type_expression}"
           new_line
           create_func_init api_attrs
@@ -141,7 +141,7 @@ module Yousei::DataServiceGenerator
 
         line "public func data(#{args_expression}) -> ET? {" do
           line "let key = cacheKeyFor(#{call_args})"
-          line 'return findInCache(key)'
+          line 'return findInCache(key) as? ET'
         end
       end
 
@@ -164,7 +164,7 @@ module Yousei::DataServiceGenerator
           line "factory.create#{api_name}().setup(#{call_args}).#{call_expression} { #{callback} in", '}' do
             if rvar
               line 'if let x = object {' do
-                line 'let key = self.cacheKeyFor(id)'
+                line "let key = self.cacheKeyFor(#{call_args})"
                 line 'self.storeInCache(key, object: object)'
               end
               line 'self.notify(object, error: res.error)'

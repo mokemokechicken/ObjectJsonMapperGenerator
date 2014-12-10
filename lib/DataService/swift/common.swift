@@ -1,4 +1,4 @@
-public class TEMPLATE_YOUSEI_DS_PREFIX_<ET:AnyObject> {
+public class TEMPLATE_YOUSEI_DS_PREFIX_<ET> {
     public typealias NotificationHandler = (ET?, NSError?) -> Void
 
     let factory: YOUSEI_API_GENERATOR_PREFIX_Factory
@@ -21,16 +21,14 @@ public class TEMPLATE_YOUSEI_DS_PREFIX_<ET:AnyObject> {
         }
     }
 
-    private var cache = [String:ET]()
+    private var cache = [String:Any]()
     public var enableCache = true
 
-    private func findInCache(key: String) -> ET? {
-        var ret: ET?
-        ret = self.cache[key]
-        return ret
+    private func findInCache(key: String) -> Any? {
+        return self.cache[key]
     }
 
-    private func storeInCache(key:String, object: ET?) {
+    private func storeInCache(key:String, object: Any?) {
         if let o = object {
             if enableCache {
                 self.cache[key] = o

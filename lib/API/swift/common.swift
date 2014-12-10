@@ -42,7 +42,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Config : YOUSEI_API_GENERATOR_PREFIX_Co
     }
     
     public func log(str: String?) {
-        NSLog("\(str)")
+        if let x = str { NSLog(x) }
     }
     
     public func configureRequest(apiRequest: YOUSEI_API_GENERATOR_PREFIX_Request) {
