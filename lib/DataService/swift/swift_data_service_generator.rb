@@ -165,7 +165,7 @@ module Yousei::DataServiceGenerator
             if rvar
               line 'if let x = object {' do
                 line "let key = self.cacheKeyFor(#{call_args})"
-                line 'self.storeInCache(key, object: object)'
+                line 'self.storeInCache(key, object: x)'
               end
               line 'self.notify(object, error: res.error)'
             else

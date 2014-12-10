@@ -8,14 +8,17 @@ public class TEMPLATE_YOUSEI_DS_PREFIX_<ET> {
 
     private var observers = [(AnyObject, NotificationHandler)]()
     public func addObserver(object: AnyObject, handler: NotificationHandler) {
+        factory.config.log("\(self) addObserver \(object)")
         observers.append((object, handler))
     }
 
     public func removeObserver(object: AnyObject) {
+        factory.config.log("\(self) removeObserver \(object)")
         observers = observers.filter { $0.0 !== object}
     }
 
     public func notify(data: ET?, error: NSError?) {
+        factory.config.log("\(self) notify")
         for observer in observers {
             observer.1(data, error)
         }
