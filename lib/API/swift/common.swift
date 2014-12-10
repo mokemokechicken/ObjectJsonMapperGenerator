@@ -200,7 +200,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
 }
 
 ///////////////////// Begin https://github.com/Alamofire/Alamofire/blob/master/Source/Alamofire.swift
-class URLUtil {
+private class URLUtil {
     class func makeQueryString(parameters: [String: AnyObject]) -> String {
         var components: [(String, String)] = []
         for key in sorted(Array(parameters.keys), <) {

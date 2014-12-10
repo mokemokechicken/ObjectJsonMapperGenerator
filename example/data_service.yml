@@ -1,7 +1,7 @@
-data_service_prefix: QiitaDS
-api_prefix: QiitaAPI
-entity_prefix: Qiita
-api_error_entity: APIError
+data_service_prefix: QQQiitaDS
+api_prefix: QQQiitaAPI
+entity_prefix: QQQiita
+api_error_entity: QQAPIError
 
 alias:
   pager: &pager
@@ -28,7 +28,7 @@ api:
       coediting: Bool
       gist?: Bool
       private: Bool
-      tags: [Tag]å
+      tags: [Tag]
       title: String
       tweet?: Bool
 

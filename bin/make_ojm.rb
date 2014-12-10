@@ -13,7 +13,7 @@ opt = OptionParser.new
 opt.on('-v', 'Verbose') {|v| params[:verbose] = v }
 opt.on('-c filename', 'Specify Structure YAML File') {|v| params[:config] = v }
 opt.on('-l language', %w(ruby swift), 'ruby|swift') {|v| params[:language] = v }
-opt.on('-t type', %w(json api), 'json|api') {|v| params[:type] = v }
+opt.on('-t type', %w(json api ds), 'json|api|ds') {|v| params[:type] = v }
 opt.on('-n [namespace]', 'Specify Namespace of OJM codes') {|v| params[:namespace] = v }
 opt.on('-o [output filename]', 'Specify output filename.') {|v| params[:output] = v }
 
@@ -46,6 +46,7 @@ gen_class = case [params[:language], params[:type]]
               when %w(ruby json) then Yousei::OJMGenerator::Ruby::RubyOJMGenerator
               when %w(swift json) then Yousei::OJMGenerator::Swift::SwiftOJMGenerator
               when %w(swift api) then Yousei::APIGenerator::Swift::SwiftGenerator
+              when %w(swift ds) then Yousei::DataServiceGenerator::Swift::SwiftGenerator
               else
                 puts "unsupported type #{params[:type]} and language #{params[:language]}"
                 exit 1
