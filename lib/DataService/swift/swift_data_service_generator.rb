@@ -160,9 +160,10 @@ module Yousei::DataServiceGenerator
         rvar, _ = rvar_and_handler_type api_attrs
         line "public func request(#{args_expression}) {" do
           call_expression = body_needed ?  "call(#{bvar.code_name})" : 'call'
-          callback = rvar ? 'res, object' : 'res'
+          callback = rvar ? 'res, o' : 'res'
           line "factory.create#{api_name}().setup(#{call_args}).#{call_expression} { #{callback} in", '}' do
             if rvar
+              line 'var object = self.requestedObjectConverter(o)'
               line 'if let x = object {' do
                 line "let key = self.cacheKeyFor(#{call_args})"
                 line 'self.storeInCache(key, object: x)'
