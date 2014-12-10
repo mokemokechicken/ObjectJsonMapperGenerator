@@ -1,3 +1,4 @@
+data_service_prefix: QiitaDS
 api_prefix: QiitaAPI
 entity_prefix: Qiita
 api_error_entity: APIError
@@ -40,26 +41,26 @@ api:
       tags: [Tag]
       title: String
 
-  SamplePut:
-    put: path/to/{id}/{key}
-    params:
-      <<: *pager
-      where: String
-    body: [Item]
-    response:
-      count: Int
-      tags: [Tag]
-
-  SamplePatch:
-    patch: path/to/{id}/{key}
-    body: Item
-    response: [String]
-
-  SamplePostBinary:
-    post: post/to/binary
-    body:
-    response:
-      url: String
+#  SamplePut:
+#    put: path/to/{id}/{key}
+#    params:
+#      <<: *pager
+#      where: String
+#    body: [Item]
+#    response:
+#      count: Int
+#      tags: [Tag]
+#
+#  SamplePatch:
+#    patch: path/to/{id}/{key}
+#    body: Item
+#    response: [String]
+#
+#  SamplePostBinary:
+#    post: post/to/binary
+#    body:
+#    response:
+#      url: String
 
 entity:
   Tag:
