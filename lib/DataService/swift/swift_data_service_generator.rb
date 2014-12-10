@@ -170,7 +170,7 @@ module Yousei::DataServiceGenerator
               end
               line "self.notify(object, status: #{ds_class :Status}(response: res))"
             else
-              line "self.notify(NSNull(), status: #{ds_class :Status}(response: res))"
+              line "self.notify(nil, status: #{ds_class :Status}(response: res))"
             end
           end
         end
