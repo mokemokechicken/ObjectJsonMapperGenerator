@@ -1,6 +1,7 @@
-api_prefix: QiitaAPI
-entity_prefix: Qiita
-api_error_entity: APIError
+data_service_prefix: QQQiitaDS
+api_prefix: QQQiitaAPI
+entity_prefix: QQQiita
+api_error_entity: QQAPIError
 
 alias:
   pager: &pager
@@ -27,7 +28,7 @@ api:
       coediting: Bool
       gist?: Bool
       private: Bool
-      tags: [Tag]å
+      tags: [Tag]
       title: String
       tweet?: Bool
 
@@ -40,26 +41,26 @@ api:
       tags: [Tag]
       title: String
 
-  SamplePut:
-    put: path/to/{id}/{key}
-    params:
-      <<: *pager
-      where: String
-    body: [Item]
-    response:
-      count: Int
-      tags: [Tag]
-
-  SamplePatch:
-    patch: path/to/{id}/{key}
-    body: Item
-    response: [String]
-
-  SamplePostBinary:
-    post: post/to/binary
-    body:
-    response:
-      url: String
+#  SamplePut:
+#    put: path/to/{id}/{key}
+#    params:
+#      <<: *pager
+#      where: String
+#    body: [Item]
+#    response:
+#      count: Int
+#      tags: [Tag]
+#
+#  SamplePatch:
+#    patch: path/to/{id}/{key}
+#    body: Item
+#    response: [String]
+#
+#  SamplePostBinary:
+#    post: post/to/binary
+#    body:
+#    response:
+#      url: String
 
 entity:
   Tag:

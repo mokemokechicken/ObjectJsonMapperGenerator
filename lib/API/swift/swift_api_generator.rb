@@ -1,7 +1,8 @@
 module Yousei::APIGenerator
   module Swift
-
     module Util
+      include Yousei::Swift
+
       def entity_class(s)
         "#{@entity_class_prefix}#{s}"
       end
@@ -13,16 +14,87 @@ module Yousei::APIGenerator
       def yousei_class(s)
         "#{@yousei_class_prefix}#{s}"
       end
+
+      ######################## Helper ################################
+      def make_args_list(api_attrs)
+        required_param_list = []
+        optional_param_list = []
+        if api_attrs['params']
+          api_attrs['params'].each do |ident, type|
+            var = SwiftVariable::create_variable(ident, type)
+            if var.optional
+              optional_param_list << var
+            else
+              required_param_list << var
+            end
+          end
+        end
+
+        params_keys = (api_attrs['params'] || {}).keys
+        path_placeholder_keys(api_attrs).each do |key|
+          required_param_list << SwiftVariable::create_variable(key, 'String') unless params_keys.include?(key)
+        end
+
+        args_expression = make_arg_expression required_param_list, optional_param_list
+        [args_expression, required_param_list, optional_param_list]
+      end
+
+      def make_arg_expression(required_param_list, optional_param_list)
+        default_value = ' = nil'
+        param_list = required_param_list + optional_param_list
+        args_expression_list = []
+        param_list.each_with_index  do |v, i|
+          if i == 0 && !v.optional
+            var_name = "##{v.code_name}"
+          else
+            var_name = v.code_name
+          end
+          args_expression_list << "#{var_name}: #{v.type_expression_with_optional}#{default_value if v.optional}"
+        end
+        args_expression_list.join(', ')
+      end
+
+      def make_call_args_expression(api_attrs)
+        _, required_param_list, optional_param_list = make_args_list(api_attrs)
+        (required_param_list + optional_param_list).map {|v| "#{v.code_name}: #{v.code_name}"}.join(', ')
+      end
+
+      def rvar_and_handler_type(api_attrs)
+        rvar = api_attrs['response'] ? SwiftVariable::create_variable('response', api_attrs['response']) : nil
+        handler_type = if rvar
+                         "(#{yousei_class :Response}, #{rvar.type_expression}?) -> Void"
+                       else
+                         "(#{yousei_class :Response}) -> Void"
+                       end
+        [rvar, handler_type]
+      end
+
+      def required_body_object?(api_attrs)
+        method, _ = method_and_path api_attrs
+        %w(POST PUT PATCH).include? method
+      end
+
+      def path_placeholder_keys(api_attrs)
+        _, path = method_and_path api_attrs
+        path.scan(/\{([^}]+)\}/).map {|x| x[0]}
+      end
+
+      def method_and_path(api_attrs)
+        return ['GET', api_attrs['get']] if api_attrs.include? 'get'
+        return ['POST', api_attrs['post']] if api_attrs.include? 'post'
+        return ['PUT', api_attrs['put']] if api_attrs.include? 'put'
+        return ['PATCH', api_attrs['patch']] if api_attrs.include? 'patch'
+        return ['DELETE', api_attrs['delete']] if api_attrs.include? 'delete'
+      end
     end
 
-
     class SwiftGenerator < GeneratorBase
+      attr_accessor :entity_class_prefix, :api_class_prefix, :yousei_class_prefix
+      attr_accessor :definitions_after_create
       TEMPLATE_YOUSEI_API_PREFIX = 'YOUSEI_API_GENERATOR_PREFIX_'
       TEMPLATE_YOUSEI_ENTITY_PREFIX = 'YOUSEI_ENTITY_PREFIX_'
 
-
       include Util
-      include Yousei::Swift
 
       def generate(definitions, opts = nil)
         enable_swift_feature
@@ -48,9 +120,10 @@ module Yousei::APIGenerator
         output_api_base_script(@api_class_prefix, @entity_class_prefix)
 
         create_factory definitions
+        @definitions_after_create = {}
         definitions.each do |api_name, api_attrs|
           new_line
-          create_api_class api_name, api_attrs
+          @definitions_after_create[api_name] = create_api_class api_name, api_attrs
         end
       end
 
@@ -94,6 +167,7 @@ module Yousei::APIGenerator
           new_line
           create_func_call api_name, api_attrs
         end
+        api_attrs
       end
 
       def replace_and_create_entity(name, api_attrs)
@@ -120,40 +194,6 @@ module Yousei::APIGenerator
       end
 
       def create_func_setup(api_name, api_attrs)
-        def make_args_list(api_attrs)
-          required_param_list = []
-          optional_param_list = []
-          if api_attrs['params']
-            api_attrs['params'].each do |ident, type|
-              var = SwiftVariable::create_variable(ident, type)
-              if var.optional
-                optional_param_list << var
-              else
-                required_param_list << var
-              end
-            end
-          end
-
-          params_keys = (api_attrs['params'] || {}).keys
-          path_placeholder_keys(api_attrs).each do |key|
-            required_param_list << SwiftVariable::create_variable(key, 'String') unless params_keys.include?(key)
-          end
-
-          default_value = ' = nil'
-          param_list = required_param_list + optional_param_list
-          args_expression_list = []
-          param_list.each_with_index  do |v, i|
-            if i == 0 && !v.optional
-              var_name = "##{v.code_name}"
-            else
-              var_name = v.code_name
-            end
-            args_expression_list << "#{var_name}: #{v.type_expression_with_optional}#{default_value if v.optional}"
-          end
-
-          [args_expression_list.join(', '), required_param_list, optional_param_list]
-        end
-
         args_expression, required_param_list, optional_param_list = make_args_list(api_attrs)
 
         line "public func setup(#{args_expression}) -> #{api_class api_name} {" do
@@ -176,7 +216,6 @@ module Yousei::APIGenerator
           line 'return self'
         end
       end
-
 
       def create_func_call(api_name, api_attrs)
         if required_body_object?(api_attrs)
@@ -201,16 +240,6 @@ module Yousei::APIGenerator
         end
       end
 
-      def rvar_and_handler_type(api_attrs)
-        rvar = api_attrs['response'] ? SwiftVariable::create_variable('response', api_attrs['response']) : nil
-        handler_type = if rvar
-                         "(#{yousei_class :Response}, #{rvar.type_expression}?) -> Void"
-                       else
-                         "(#{yousei_class :Response}) -> Void"
-                       end
-        [rvar, handler_type]
-      end
-
       def create_do_request(rvar, with_object = false)
         line "doRequest(#{'object' if with_object}) { response in", '}' do
           if rvar
@@ -219,25 +248,6 @@ module Yousei::APIGenerator
             line 'completionHandler(response)'
           end
         end
-      end
-
-      ######################## Helper ################################
-      def method_and_path(api_attrs)
-        return ['GET', api_attrs['get']] if api_attrs.include? 'get'
-        return ['POST', api_attrs['post']] if api_attrs.include? 'post'
-        return ['PUT', api_attrs['put']] if api_attrs.include? 'put'
-        return ['PATCH', api_attrs['patch']] if api_attrs.include? 'patch'
-        return ['DELETE', api_attrs['delete']] if api_attrs.include? 'delete'
-      end
-
-      def required_body_object?(api_attrs)
-        method, _ = method_and_path api_attrs
-        %w(POST PUT PATCH).include? method
-      end
-
-      def path_placeholder_keys(api_attrs)
-        _, path = method_and_path api_attrs
-        path.scan(/\{([^}]+)\}/).map {|x| x[0]}
       end
     end
   end

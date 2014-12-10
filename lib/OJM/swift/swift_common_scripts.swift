@@ -21,7 +21,7 @@ private func decodeOptional(obj: AnyObject?) -> AnyObject? {
     }
 }
 
-func JsonGenObjectFromJsonData(data: NSData!) -> AnyObject? {
+private func JsonGenObjectFromJsonData(data: NSData!) -> AnyObject? {
     if data == nil {
         return nil
     }
