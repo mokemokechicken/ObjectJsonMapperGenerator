@@ -50,12 +50,11 @@ module Yousei::DataServiceGenerator
 
       def create_data_service(definitions, opts)
         @ds_class_prefix = opts[:prefix]
-        api_attrs = @api_def
         output_ds_base_script(@ds_class_prefix, @api_class_prefix, @entity_class_prefix)
         new_line
-        create_service_locator api_attrs
+        create_service_locator @api_def
         new_line
-        create_data_service_class api_attrs
+        create_data_service_class @api_def
       end
 
       def output_ds_base_script(ds_prefix, api_prefix, entity_prefix)
@@ -66,12 +65,25 @@ module Yousei::DataServiceGenerator
         line template.split /\n/
       end
 
-      def create_service_locator(api_attrs)
-
+      def create_service_locator(api_def)
+        line "public class #{ds_class :Locator} {" do
+          api_def.each do |api_name, api_attrs|
+            rvar, _ = rvar_and_handler_type api_attrs
+            rvar ||= SwiftVariable::create_variable 'rvar', 'NSNull'
+            line "public var #{api_name.si}: #{ds_class api_name}<#{rvar.type_expression}>!"
+          end
+          new_line
+          line "public convenience init(factory: #{api_class :Factory}) {" do
+            line 'self.init()'
+            api_def.each do |api_name, api_attrs|
+              line "self.#{api_name.si} = #{ds_class api_name}(factory: factory)"
+            end
+          end
+        end
       end
 
-      def create_data_service_class(api_attrs)
-
+      def create_data_service_class(api_def)
+        
       end
     end
   end
