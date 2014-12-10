@@ -18,7 +18,7 @@ public class TEMPLATE_YOUSEI_DS_PREFIX_<ET> {
         observers = observers.filter { $0.0 !== object}
     }
 
-    public func notify(data: ET?, status: TEMPLATE_YOUSEI_DS_PREFIX_Status) {
+    private func notify(data: ET?, status: TEMPLATE_YOUSEI_DS_PREFIX_Status) {
         factory.config.log("\(self) notify")
         for observer in observers {
             observer.1(data, status)
