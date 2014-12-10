@@ -1,5 +1,5 @@
 public class TEMPLATE_YOUSEI_DS_PREFIX_<ET> {
-    public typealias NotificationHandler = (ET?, NSError?) -> Void
+    public typealias NotificationHandler = (ET?, TEMPLATE_YOUSEI_DS_PREFIX_Status?) -> Void
 
     let factory: YOUSEI_API_GENERATOR_PREFIX_Factory
     public init(factory: YOUSEI_API_GENERATOR_PREFIX_Factory) {
@@ -17,10 +17,10 @@ public class TEMPLATE_YOUSEI_DS_PREFIX_<ET> {
         observers = observers.filter { $0.0 !== object}
     }
 
-    public func notify(data: ET?, error: NSError?) {
+    public func notify(data: ET?, status: TEMPLATE_YOUSEI_DS_PREFIX_Status) {
         factory.config.log("\(self) notify")
         for observer in observers {
-            observer.1(data, error)
+            observer.1(data, status)
         }
     }
 
@@ -45,3 +45,12 @@ public class TEMPLATE_YOUSEI_DS_PREFIX_<ET> {
         self.cache.removeAll(keepCapacity: false)
     }
 }
+
+public class TEMPLATE_YOUSEI_DS_PREFIX_Status {
+    public let response: YOUSEI_API_GENERATOR_PREFIX_Response
+
+    public init(response: YOUSEI_API_GENERATOR_PREFIX_Response) {
+        self.response = response
+    }
+}
+

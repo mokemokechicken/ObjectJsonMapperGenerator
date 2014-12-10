@@ -167,9 +167,9 @@ module Yousei::DataServiceGenerator
                 line "let key = self.cacheKeyFor(#{call_args})"
                 line 'self.storeInCache(key, object: x)'
               end
-              line 'self.notify(object, error: res.error)'
+              line "self.notify(object, status: #{ds_class :Status}(response: res))"
             else
-              line 'self.notify(NSNull(), error: res.error)'
+              line "self.notify(NSNull(), status: #{ds_class :Status}(response: res))"
             end
           end
         end
