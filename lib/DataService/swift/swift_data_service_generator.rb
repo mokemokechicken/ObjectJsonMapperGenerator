@@ -162,13 +162,18 @@ module Yousei::DataServiceGenerator
           call_expression = body_needed ?  "call(#{bvar.code_name})" : 'call'
           callback = rvar ? 'res, object' : 'res'
           line "factory.create#{api_name}().setup(#{call_args}).#{call_expression} { #{callback} in", '}' do
-
+            if rvar
+              line 'if let x = object {' do
+                line 'let key = self.cacheKeyFor(id)'
+                line 'self.storeInCache(key, object: object)'
+              end
+              line 'self.notify(object, error: res.error)'
+            else
+              line 'self.notify(NSNull(), error: res.error)'
+            end
           end
         end
-
       end
-
-
     end
   end
 end
