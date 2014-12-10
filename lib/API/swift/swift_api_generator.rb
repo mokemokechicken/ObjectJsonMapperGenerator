@@ -35,6 +35,11 @@ module Yousei::APIGenerator
           required_param_list << SwiftVariable::create_variable(key, 'String') unless params_keys.include?(key)
         end
 
+        args_expression = make_arg_expression required_param_list, optional_param_list
+        [args_expression, required_param_list, optional_param_list]
+      end
+
+      def make_arg_expression(required_param_list, optional_param_list)
         default_value = ' = nil'
         param_list = required_param_list + optional_param_list
         args_expression_list = []
@@ -46,8 +51,12 @@ module Yousei::APIGenerator
           end
           args_expression_list << "#{var_name}: #{v.type_expression_with_optional}#{default_value if v.optional}"
         end
+        args_expression_list.join(', ')
+      end
 
-        [args_expression_list.join(', '), required_param_list, optional_param_list]
+      def make_call_args_expression(api_attrs)
+        _, required_param_list, optional_param_list = make_args_list(api_attrs)
+        (required_param_list + optional_param_list).map {|v| "#{v.code_name}: #{v.code_name}"}.join(', ')
       end
 
       def rvar_and_handler_type(api_attrs)
@@ -81,6 +90,7 @@ module Yousei::APIGenerator
 
     class SwiftGenerator < GeneratorBase
       attr_accessor :entity_class_prefix, :api_class_prefix, :yousei_class_prefix
+      attr_accessor :definitions_after_create
       TEMPLATE_YOUSEI_API_PREFIX = 'YOUSEI_API_GENERATOR_PREFIX_'
       TEMPLATE_YOUSEI_ENTITY_PREFIX = 'YOUSEI_ENTITY_PREFIX_'
 
@@ -110,9 +120,10 @@ module Yousei::APIGenerator
         output_api_base_script(@api_class_prefix, @entity_class_prefix)
 
         create_factory definitions
+        @definitions_after_create = {}
         definitions.each do |api_name, api_attrs|
           new_line
-          create_api_class api_name, api_attrs
+          @definitions_after_create[api_name] = create_api_class api_name, api_attrs
         end
       end
 
@@ -156,6 +167,7 @@ module Yousei::APIGenerator
           new_line
           create_func_call api_name, api_attrs
         end
+        api_attrs
       end
 
       def replace_and_create_entity(name, api_attrs)
