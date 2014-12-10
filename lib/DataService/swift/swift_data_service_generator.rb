@@ -28,6 +28,7 @@ module Yousei::DataServiceGenerator
 
       include Util
       include Yousei::Swift
+      include Yousei::APIGenerator::Swift::Util
 
       # @param [Hash] definitions
       def generate(definitions, opts=nil)
@@ -49,9 +50,12 @@ module Yousei::DataServiceGenerator
 
       def create_data_service(definitions, opts)
         @ds_class_prefix = opts[:prefix]
+        api_attrs = @api_def
         output_ds_base_script(@ds_class_prefix, @api_class_prefix, @entity_class_prefix)
         new_line
-        #create_service_locator()
+        create_service_locator api_attrs
+        new_line
+        create_data_service_class api_attrs
       end
 
       def output_ds_base_script(ds_prefix, api_prefix, entity_prefix)
@@ -60,6 +64,14 @@ module Yousei::DataServiceGenerator
         template.gsub!(/#{TEMPLATE_YOUSEI_API_PREFIX}/, api_prefix)
         template.gsub!(/#{TEMPLATE_YOUSEI_ENTITY_PREFIX}/, entity_prefix)
         line template.split /\n/
+      end
+
+      def create_service_locator(api_attrs)
+
+      end
+
+      def create_data_service_class(api_attrs)
+
       end
     end
   end
