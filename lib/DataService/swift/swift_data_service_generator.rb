@@ -90,8 +90,8 @@ module Yousei::DataServiceGenerator
       end
 
       def rvar_or_nsnull(api_attrs)
-        rvar, _ = api_response_info api_attrs
-        rvar || SwiftVariable::create_variable('rvar', 'NSNull')
+        info = api_response_info api_attrs
+        info[:response_var] || SwiftVariable::create_variable('rvar', 'NSNull')
       end
 
       def create_data_service_class(api_name, api_attrs)
@@ -157,7 +157,8 @@ module Yousei::DataServiceGenerator
           args_expression = make_arg_expression([bvar] + required_param_list, optional_param_list)[1..-1]
         end
 
-        rvar, _ = api_response_info api_attrs
+        info = api_response_info api_attrs
+        rvar = info[:response_var]
         line "public func request(#{args_expression}) {" do
           call_expression = body_needed ?  "call(#{bvar.code_name})" : 'call'
           callback = rvar ? 'res, o' : 'res'
