@@ -59,14 +59,17 @@ module Yousei::APIGenerator
         (required_param_list + optional_param_list).map {|v| "#{v.code_name}: #{v.code_name}"}.join(', ')
       end
 
-      def rvar_and_handler_type(api_attrs)
-        rvar = api_attrs['response'] ? SwiftVariable::create_variable('response', api_attrs['response']) : nil
-        handler_type = if rvar
-                         "(#{yousei_class :Response}, #{rvar.type_expression}?) -> Void"
+      def api_response_info(api_attrs)
+        response_var = api_attrs['response'] ? SwiftVariable::create_variable('response', api_attrs['response']) : nil
+        err_var = api_attrs['error'] ? SwiftVariable::create_variable('error', api_attrs['error']) : nil
+
+        handler_type = if response_var
+                         "(#{yousei_class :Response}, #{response_var.type_expression}?, #{err_var.type_expression}?) -> Void"
                        else
-                         "(#{yousei_class :Response}) -> Void"
+                         "(#{yousei_class :Response}, #{err_var.type_expression}?) -> Void"
                        end
-        [rvar, handler_type]
+        [response_var, handler_type]
+        return {response_var: response_var, error_var: err_var, handler_type: handler_type}
       end
 
       def required_body_object?(api_attrs)
@@ -101,6 +104,17 @@ module Yousei::APIGenerator
         super definitions, opts
       end
 
+      def pre_process_definitions
+        @api_def.each do |_, api_attrs|
+          set_api_error_entity(api_attrs, @definitions['api_error_entity'])
+        end
+      end
+
+      def set_api_error_entity(api_attrs, entity_name)
+        return unless entity_name
+        api_attrs['error'] = entity_name unless api_attrs['error']
+      end
+
       def create_entity(opts)
         super
         generator = Yousei::OJMGenerator::Swift::SwiftOJMGenerator.new writer: @writer
@@ -115,13 +129,13 @@ module Yousei::APIGenerator
         @api_class_prefix = opts[:prefix].to_s
         @yousei_class_prefix = opts[:prefix] || 'YouseiAPI'
 
-        definitions = opts[:def]
+        api_def = opts[:def]
 
         output_api_base_script(@api_class_prefix, @entity_class_prefix)
 
-        create_factory definitions
+        create_factory api_def
         @definitions_after_create = {}
-        definitions.each do |api_name, api_attrs|
+        api_def.each do |api_name, api_attrs|
           new_line
           @definitions_after_create[api_name] = create_api_class api_name, api_attrs
         end
@@ -226,26 +240,28 @@ module Yousei::APIGenerator
       end
 
       def create_func_call_normal(api_name, api_attrs)
-        rvar, handler_type = rvar_and_handler_type api_attrs
-        line "public func call(completionHandler: #{handler_type}) {" do
-          create_do_request rvar, false
+        info = api_response_info api_attrs
+        line "public func call(completionHandler: #{info[:handler_type]}) {" do
+          create_do_request info[:response_var], info[:error_var], false
         end
       end
 
       def create_func_call_with_body(api_name, api_attrs)
-        rvar, handler_type = rvar_and_handler_type api_attrs
+        info = api_response_info api_attrs
         bvar = SwiftVariable::create_variable 'body', (api_attrs['body'] || 'NSData')
-        line "public func call(object: #{bvar.type_expression}, completionHandler: #{handler_type}) {" do
-          create_do_request rvar, true
+        line "public func call(object: #{bvar.type_expression}, completionHandler: #{info[:handler_type]}) {" do
+          create_do_request info[:response_var], info[:error_var], true
         end
       end
 
-      def create_do_request(rvar, with_object = false)
+      def create_do_request(rvar, evar, with_object = false)
         line "doRequest(#{'object' if with_object}) { response in", '}' do
+          error = "#{evar.from_data_expression 'response.data'} as? #{evar.type_expression}"
           if rvar
-            line "completionHandler(response, #{rvar.from_data_expression 'response.data'} as? #{rvar.type_expression})"
+            response = "#{rvar.from_data_expression 'response.data'} as? #{rvar.type_expression}"
+            line "completionHandler(response, #{response}, #{error})"
           else
-            line 'completionHandler(response)'
+            line "completionHandler(response, #{error})"
           end
         end
       end

@@ -16,9 +16,7 @@ api:
   GetItem:
     get: items/{id}
     response: Item
-    error:
-      code: Int
-      another: String
+    error: APIError2
 
   PostItem:
     post: items
@@ -97,3 +95,7 @@ entity:
   APIError:
     message: String
     type: String
+
+  APIError2:
+    code: Int
+    message: String

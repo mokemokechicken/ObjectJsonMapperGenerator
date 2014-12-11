@@ -10,6 +10,7 @@ module Yousei::APIGenerator
     # @param [Hash] definitions
     def generate(definitions, opts=nil)
       fetch_definitions definitions
+      pre_process_definitions
       create_entity(prefix: @entity_prefix, def: @entity_def) if @entity_def
       create_api(prefix: @api_prefix, def: @api_def)
     end
@@ -20,6 +21,9 @@ module Yousei::APIGenerator
       @api_def = definitions['api']
       @api_prefix = definitions['api_prefix'].to_s
       @entity_prefix = definitions['entity_prefix'].to_s
+    end
+
+    def pre_process_definitions
     end
 
     def create_entity(opts)

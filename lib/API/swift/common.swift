@@ -117,7 +117,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
         self.apiRequest = YOUSEI_API_GENERATOR_PREFIX_Request(info: info)
     }
     
-    func setBody(object: AnyObject) {
+    func setupBody(object: AnyObject) {
         // set body if needed
         let method = apiRequest.info.method
         if !(method == .POST || method == .PUT || method == .PATCH) {
@@ -154,7 +154,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
     }
     
     func doRequest(object: AnyObject, completionHandler: CompletionHandler) {
-        setBody(object)
+        setupBody(object)
         doRequest(completionHandler)
     }
     
