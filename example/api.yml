@@ -27,7 +27,7 @@ api:
       coediting: Bool
       gist?: Bool
       private: Bool
-      tags: [Tag]å
+      tags: [Tag]
       title: String
       tweet?: Bool
 
