@@ -107,6 +107,8 @@ module Yousei::DataServiceGenerator
           create_func_data api_attrs
           new_line
           create_func_request api_name, api_attrs
+          new_line
+          create_func_fetch_parse_error api_name, api_attrs
         end
       end
 
@@ -181,6 +183,12 @@ module Yousei::DataServiceGenerator
               line "self.notify(nil, status: #{ds_class :Status}(response: res))"
             end
           end
+        end
+      end
+
+      def create_func_fetch_parse_error(api_name, api_attrs)
+        line 'public func fetchParseError(status: QiitaDSStatus) -> ErrorType? {' do
+          line 'return status.response.errorInfo() as? ErrorType'
         end
       end
     end
