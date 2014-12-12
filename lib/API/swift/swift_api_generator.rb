@@ -182,6 +182,8 @@ module Yousei::APIGenerator
           create_func_setup api_name, api_attrs
           new_line
           create_func_call api_name, api_attrs
+          new_line
+          create_error_info api_attrs
         end
         api_attrs
       end
@@ -270,6 +272,15 @@ module Yousei::APIGenerator
             line "completionHandler(response, #{response})"
           else
             line 'completionHandler(response)'
+          end
+        end
+      end
+
+      def create_error_info(api_attrs)
+        info = api_response_info api_attrs
+        if info[:error_var]
+          line "public class func errorInfo(response: #{yousei_class :Response}) -> #{info[:error_var].type_expression}? {" do
+            line 'return ErrorType.fromData(response.data) as ErrorType?'
           end
         end
       end

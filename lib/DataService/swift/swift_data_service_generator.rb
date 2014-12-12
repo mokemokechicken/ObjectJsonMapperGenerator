@@ -96,8 +96,8 @@ module Yousei::DataServiceGenerator
 
       def create_data_service_class(api_name, api_attrs)
         rvar = rvar_or_nsnull api_attrs
-        line "public class #{ds_class api_name}<ET> : #{ds_class ''}<ET> {" do
-          line "public typealias ET = #{rvar.type_expression}"
+        line "public class #{ds_class api_name}<DataType> : #{ds_class ''}<DataType> {" do
+          line "public typealias DataType = #{rvar.type_expression}"
           create_type_aliases api_name, api_attrs
           new_line
           create_func_init api_attrs
@@ -145,12 +145,13 @@ module Yousei::DataServiceGenerator
       end
 
       def create_func_data(api_attrs)
+        rvar = rvar_or_nsnull api_attrs
         call_args = make_call_args_expression api_attrs
         args_expression, _, _ = make_args_list api_attrs
 
-        line "public func data(#{args_expression}) -> ET? {" do
+        line "public func data(#{args_expression}) -> #{rvar.type_expression}? {" do
           line "let key = cacheKeyFor(#{call_args})"
-          line 'return findInCache(key) as? ET'
+          line "return findInCache(key) as? #{rvar.type_expression}"
         end
       end
 
@@ -187,8 +188,11 @@ module Yousei::DataServiceGenerator
       end
 
       def create_func_fetch_parse_error(api_name, api_attrs)
-        line 'public func fetchParseError(status: QiitaDSStatus) -> ErrorType? {' do
-          line 'return status.response.errorInfo() as? ErrorType'
+        info = api_response_info api_attrs
+        if info[:error_var]
+          line "public func fetchParseError(status: #{ds_class :Status}) -> #{info[:error_var].type_expression}? {" do
+            line "return #{api_class api_name}.errorInfo(status.response)"
+          end
         end
       end
     end

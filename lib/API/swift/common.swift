@@ -86,6 +86,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Request {
     
     public init(info: YOUSEI_API_GENERATOR_PREFIX_Info) {
         self.info = info
+        self.request.HTTPMethod = info.method.rawValue
     }
 }
 
@@ -102,8 +103,13 @@ public class YOUSEI_API_GENERATOR_PREFIX_Response {
         self.error = error
     }
 
-    public func errorInfo<ET: YOUSEI_ENTITY_PREFIX_EntityBase>() -> ET? {
-        return ET.fromData(data) as ET?
+    public func statusCode() -> Int {
+        return response?.statusCode ?? -1
+    }
+
+    public func isStatus2xx() -> Bool {
+        let s = statusCode()
+        return 200 <= s && s < 300
     }
 }
 
@@ -173,16 +179,23 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
             apiRequest.request.URL = urlComponents.URL
         }
         
-        config.log("Request URL: \(apiRequest.request.URL?.absoluteString)")
-        
+        config.log("Request: \(apiRequest.request.HTTPMethod) \(apiRequest.request.URL?.absoluteString)")
+        self.config.beforeRequest(self.apiRequest)
+
         dispatch_async(config.queue) {
-            self.config.beforeRequest(self.apiRequest)
             var response: NSURLResponse?
             var error: NSError?
             var data = NSURLConnection.sendSynchronousRequest(self.apiRequest.request, returningResponse: &response, error: &error)
             var apiResponse = YOUSEI_API_GENERATOR_PREFIX_Response(request: self.apiRequest, response: response as? NSHTTPURLResponse, data: data, error: error)
-            self.config.afterResponse(apiResponse)
             dispatch_async(self.handlerQueue ?? dispatch_get_main_queue()) { // Thread周りは微妙。どうするといいだろう。
+                self.config.afterResponse(apiResponse)
+                if let e = apiResponse.error {
+                    self.config.log(e.description)
+                    if let d = data {
+                        var responseBody = NSString(data: d, encoding: NSUTF8StringEncoding) ?? "Response is not UTF8Encoding"
+                        self.config.log("RESPONSE(\(d.length) bytes): \(responseBody)")
+                    }
+                }
                 completionHandler(apiResponse)
             }
         }
