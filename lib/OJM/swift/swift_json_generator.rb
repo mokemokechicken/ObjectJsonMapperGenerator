@@ -23,12 +23,16 @@ module Yousei::OJMGenerator
         enable_swift_feature
         super(opts)
         @indent_width = 4
-      end
+        @ext = 'swift'
 
+        @writer.register_hook_open_new_file {|info|
+          output_include
+        }
+      end
 
       def with_namespace(namespace)
         # Namespace isn't supported
-        @class_prefix = namespace
+        @class_prefix = namespace || ''
         @entity_class_prefix = @class_prefix
         @yousei_class_prefix = @class_prefix
         super namespace
@@ -64,8 +68,8 @@ module Yousei::OJMGenerator
       end
 
       def output_include
-        super
         line 'import Foundation'
+        new_line
       end
 
       def output_common_functions
