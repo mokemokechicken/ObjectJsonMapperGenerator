@@ -1,5 +1,5 @@
 public class TEMPLATE_YOUSEI_DS_PREFIX_<ET> {
-    public typealias NotificationHandler = (ET?, TEMPLATE_YOUSEI_DS_PREFIX_Status?) -> Void
+    public typealias NotificationHandler = (ET?, TEMPLATE_YOUSEI_DS_PREFIX_Status) -> Void
     public var requestedObjectConverter: ET? -> ET? = { $0 }
 
     let factory: YOUSEI_API_GENERATOR_PREFIX_Factory

@@ -90,14 +90,15 @@ module Yousei::DataServiceGenerator
       end
 
       def rvar_or_nsnull(api_attrs)
-        rvar, _ = rvar_and_handler_type api_attrs
-        rvar || SwiftVariable::create_variable('rvar', 'NSNull')
+        info = api_response_info api_attrs
+        info[:response_var] || SwiftVariable::create_variable('rvar', 'NSNull')
       end
 
       def create_data_service_class(api_name, api_attrs)
         rvar = rvar_or_nsnull api_attrs
         line "public class #{ds_class api_name}<ET> : #{ds_class ''}<ET> {" do
           line "public typealias ET = #{rvar.type_expression}"
+          create_type_aliases api_name, api_attrs
           new_line
           create_func_init api_attrs
           new_line
@@ -106,7 +107,15 @@ module Yousei::DataServiceGenerator
           create_func_data api_attrs
           new_line
           create_func_request api_name, api_attrs
+          new_line
+          create_func_fetch_parse_error api_name, api_attrs
         end
+      end
+
+      def create_type_aliases(api_name, api_attrs)
+        info = api_response_info api_attrs
+        line "public typealias ErrorType = #{info[:error_var].type_expression}"  if info[:error_var]
+        line "public typealias BodyType = #{api_class api_name}.BodyType"  if info[:body_var]
       end
 
       def create_func_init(api_attrs)
@@ -157,7 +166,8 @@ module Yousei::DataServiceGenerator
           args_expression = make_arg_expression([bvar] + required_param_list, optional_param_list)[1..-1]
         end
 
-        rvar, _ = rvar_and_handler_type api_attrs
+        info = api_response_info api_attrs
+        rvar = info[:response_var]
         line "public func request(#{args_expression}) {" do
           call_expression = body_needed ?  "call(#{bvar.code_name})" : 'call'
           callback = rvar ? 'res, o' : 'res'
@@ -173,6 +183,12 @@ module Yousei::DataServiceGenerator
               line "self.notify(nil, status: #{ds_class :Status}(response: res))"
             end
           end
+        end
+      end
+
+      def create_func_fetch_parse_error(api_name, api_attrs)
+        line 'public func fetchParseError(status: QiitaDSStatus) -> ErrorType? {' do
+          line 'return status.response.errorInfo() as? ErrorType'
         end
       end
     end

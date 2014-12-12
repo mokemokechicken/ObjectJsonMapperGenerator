@@ -1,17 +1,3 @@
-private func try<T>(x: T?, handler: (T) -> Void) {
-    if let xx = x {
-        handler(xx)
-    }
-}
-
-private func try<T>(x: T?, handler: (T) -> Any?) -> Any? {
-    if let xx = x {
-        return handler(xx)
-    }
-    return nil
-}
-
-
 public enum YOUSEI_API_GENERATOR_PREFIX_BodyFormat {
     case JSON, FormURLEncoded
 }
@@ -47,7 +33,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Config : YOUSEI_API_GENERATOR_PREFIX_Co
     
     public func configureRequest(apiRequest: YOUSEI_API_GENERATOR_PREFIX_Request) {
         apiRequest.request.setValue("gzip;q=1.0,compress;q=0.5", forHTTPHeaderField: "Accept-Encoding")
-        try(userAgent) { ua in apiRequest.request.setValue(ua, forHTTPHeaderField: "User-Agent") }
+        if let ua = userAgent { apiRequest.request.setValue(ua, forHTTPHeaderField: "User-Agent") }
     }
     
     public func beforeRequest(apiRequest: YOUSEI_API_GENERATOR_PREFIX_Request) {
@@ -115,6 +101,10 @@ public class YOUSEI_API_GENERATOR_PREFIX_Response {
         self.data = data
         self.error = error
     }
+
+    public func errorInfo<ET: YOUSEI_ENTITY_PREFIX_EntityBase>() -> ET? {
+        return ET.fromData(data) as ET?
+    }
 }
 
 public class YOUSEI_API_GENERATOR_PREFIX_Base {
@@ -131,7 +121,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
         self.apiRequest = YOUSEI_API_GENERATOR_PREFIX_Request(info: info)
     }
     
-    func setBody(object: AnyObject) {
+    func setupBody(object: AnyObject) {
         // set body if needed
         let method = apiRequest.info.method
         if !(method == .POST || method == .PUT || method == .PATCH) {
@@ -168,7 +158,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
     }
     
     func doRequest(object: AnyObject, completionHandler: CompletionHandler) {
-        setBody(object)
+        setupBody(object)
         doRequest(completionHandler)
     }
     
