@@ -200,6 +200,10 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
             }
         }
     }
+
+    func jsonGenObjectFromJsonData(data: NSData!) -> AnyObject? {
+        return YOUSEI_ENTITY_PREFIX_JsonGenObjectFromJsonData(data)
+    }
 }
 
 ///////////////////// Begin https://github.com/Alamofire/Alamofire/blob/master/Source/Alamofire.swift

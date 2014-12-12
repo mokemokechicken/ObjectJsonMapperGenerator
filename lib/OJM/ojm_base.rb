@@ -14,15 +14,15 @@ module Yousei::OJMGenerator
     # @param [Hash] def_hash
     def generate(def_hash, opts = {})
       with_namespace opts[:namespace] do
-        @writer.change_filename "entity_common.#{@ext}"
+        @writer.change_filename "#{entity_class :Common}.#{@ext}"
         output_common_functions
 
-        @writer.change_filename "entity.#{@ext}"
         # dpp def_hash
         definitions = replace_anonymous def_hash
         # dpp definitions
         definitions = customize_definitions definitions
         definitions.each do |class_name, attrs|
+          @writer.change_filename "#{entity_class class_name}.#{@ext}"
           create_class(class_name, attrs)
           outputln
         end

@@ -1,32 +1,31 @@
-private func encode(obj: AnyObject?) -> AnyObject {
+private func _encodeObject(obj: [AnyObject?]) -> [AnyObject] {
+    var ary = [AnyObject]()
+    for o in obj {
+        ary.append(_encodeObject(o))
+    }
+    return ary
+}
+
+private func _encodeObject(obj: AnyObject?) -> AnyObject {
     switch obj {
     case nil:
         return NSNull()
-        
+
     case let ojmObject as YOUSEI_ENTITY_PREFIX_EntityBase:
         return ojmObject.toJsonDictionary()
-        
+
     default:
         return obj!
     }
 }
 
-private func decodeOptional(obj: AnyObject?) -> AnyObject? {
-    switch obj {
-    case let x as NSNull:
-        return nil
-    
-    default:
-        return obj
-    }
-}
-
-private func JsonGenObjectFromJsonData(data: NSData!) -> AnyObject? {
+func YOUSEI_ENTITY_PREFIX_JsonGenObjectFromJsonData(data: NSData!) -> AnyObject? {
     if data == nil {
         return nil
     }
     return NSJSONSerialization.JSONObjectWithData(data, options:NSJSONReadingOptions.MutableContainers, error: nil)
 }
+
 
 public class YOUSEI_ENTITY_PREFIX_EntityBase {
     public init() {
@@ -37,7 +36,7 @@ public class YOUSEI_ENTITY_PREFIX_EntityBase {
     }
 
     public class func toJsonArray(entityList: [YOUSEI_ENTITY_PREFIX_EntityBase]) -> NSArray {
-        return entityList.map {x in encode(x)}
+        return _encodeObject(entityList)
     }
 
     public class func toJsonData(entityList: [YOUSEI_ENTITY_PREFIX_EntityBase], pretty: Bool = false) -> NSData {
@@ -59,7 +58,7 @@ public class YOUSEI_ENTITY_PREFIX_EntityBase {
     }
 
     public class func fromData(data: NSData!) -> AnyObject? {
-        var object:AnyObject? = JsonGenObjectFromJsonData(data)
+        var object:AnyObject? = YOUSEI_ENTITY_PREFIX_JsonGenObjectFromJsonData(data)
         switch object {
         case let hash as NSDictionary:
             return fromJsonDictionary(hash)
@@ -99,4 +98,24 @@ public class YOUSEI_ENTITY_PREFIX_EntityBase {
         let options = pretty ? NSJSONWritingOptions.PrettyPrinted : NSJSONWritingOptions.allZeros
         return NSJSONSerialization.dataWithJSONObject(obj, options: options, error: nil)!
     }
+
+    func encodeObject(obj: [AnyObject?]) -> [AnyObject] {
+        return _encodeObject(obj)
+    }
+
+    func encodeObject(obj: AnyObject?) -> AnyObject {
+        return _encodeObject(obj)
+    }
+
+
+    func decodeOptional(obj: AnyObject?) -> AnyObject? {
+        switch obj {
+        case let x as NSNull:
+            return nil
+
+        default:
+            return obj
+        }
+    }
+
 }

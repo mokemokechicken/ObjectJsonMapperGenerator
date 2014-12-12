@@ -1,7 +1,7 @@
 module Yousei
   class Writer
     def initialize(opts=nil)
-      @open_new_file_hooks = []
+      @open_new_file_hook = nil
     end
 
     def print(s)
@@ -13,14 +13,12 @@ module Yousei
     end
 
     def register_hook_open_new_file(&block)
-      @open_new_file_hooks << block
+      @open_new_file_hook = block
     end
 
     private
     def fire_after_open_new_file(info)
-      @open_new_file_hooks.each do |block|
-        block.call(info)
-      end
+      @open_new_file_hook.call(info) if @open_new_file_hook
     end
   end
 
