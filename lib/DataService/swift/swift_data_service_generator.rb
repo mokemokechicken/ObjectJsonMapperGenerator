@@ -98,6 +98,7 @@ module Yousei::DataServiceGenerator
         rvar = rvar_or_nsnull api_attrs
         line "public class #{ds_class api_name}<ET> : #{ds_class ''}<ET> {" do
           line "public typealias ET = #{rvar.type_expression}"
+          create_type_aliases api_name, api_attrs
           new_line
           create_func_init api_attrs
           new_line
@@ -107,6 +108,12 @@ module Yousei::DataServiceGenerator
           new_line
           create_func_request api_name, api_attrs
         end
+      end
+
+      def create_type_aliases(api_name, api_attrs)
+        info = api_response_info api_attrs
+        line "public typealias ErrorType = #{info[:error_var].type_expression}"  if info[:error_var]
+        line "public typealias BodyType = #{api_class api_name}.BodyType"  if info[:body_var]
       end
 
       def create_func_init(api_attrs)

@@ -61,15 +61,16 @@ module Yousei::APIGenerator
 
       def api_response_info(api_attrs)
         response_var = api_attrs['response'] ? SwiftVariable::create_variable('response', api_attrs['response']) : nil
-        err_var = api_attrs['error'] ? SwiftVariable::create_variable('error', api_attrs['error']) : nil
+        error_var = api_attrs['error'] ? SwiftVariable::create_variable('error', api_attrs['error']) : nil
+        body_var = api_attrs['body'] ? SwiftVariable::create_variable('body', api_attrs['body']) : nil
 
         handler_type = if response_var
-                         "(#{yousei_class :Response}, #{response_var.type_expression}?, #{err_var.type_expression}?) -> Void"
+                         "(#{yousei_class :Response}, #{response_var.type_expression}?) -> Void"
                        else
-                         "(#{yousei_class :Response}, #{err_var.type_expression}?) -> Void"
+                         "(#{yousei_class :Response}) -> Void"
                        end
         [response_var, handler_type]
-        return {response_var: response_var, error_var: err_var, handler_type: handler_type}
+        return {response_var: response_var, error_var: error_var, body_var: body_var, handler_type: handler_type}
       end
 
       def required_body_object?(api_attrs)
@@ -174,7 +175,8 @@ module Yousei::APIGenerator
               new_line
             end
           end
-
+          create_type_aliases api_attrs
+          new_line
           create_func_init api_name, api_attrs
           new_line
           create_func_setup api_name, api_attrs
@@ -190,6 +192,13 @@ module Yousei::APIGenerator
         entity_generator = Yousei::OJMGenerator::Swift::SwiftOJMGenerator.new indent: @indent, writer: @writer
         entity_generator.entity_class_prefix = @entity_class_prefix
         entity_generator.create_class type_name, hash
+      end
+
+      def create_type_aliases(api_attrs)
+        info = api_response_info api_attrs
+        line "public typealias EntityType = #{info[:response_var].type_expression}"  if info[:response_var]
+        line "public typealias ErrorType = #{info[:error_var].type_expression}"  if info[:error_var]
+        line "public typealias BodyType = #{info[:body_var].type_expression}"  if info[:body_var]
       end
 
       def create_func_init(api_name, api_attrs)
@@ -242,7 +251,7 @@ module Yousei::APIGenerator
       def create_func_call_normal(api_name, api_attrs)
         info = api_response_info api_attrs
         line "public func call(completionHandler: #{info[:handler_type]}) {" do
-          create_do_request info[:response_var], info[:error_var], false
+          create_do_request info[:response_var], false
         end
       end
 
@@ -250,18 +259,17 @@ module Yousei::APIGenerator
         info = api_response_info api_attrs
         bvar = SwiftVariable::create_variable 'body', (api_attrs['body'] || 'NSData')
         line "public func call(object: #{bvar.type_expression}, completionHandler: #{info[:handler_type]}) {" do
-          create_do_request info[:response_var], info[:error_var], true
+          create_do_request info[:response_var], true
         end
       end
 
-      def create_do_request(rvar, evar, with_object = false)
+      def create_do_request(rvar, with_object = false)
         line "doRequest(#{'object' if with_object}) { response in", '}' do
-          error = "#{evar.from_data_expression 'response.data'} as? #{evar.type_expression}"
           if rvar
             response = "#{rvar.from_data_expression 'response.data'} as? #{rvar.type_expression}"
-            line "completionHandler(response, #{response}, #{error})"
+            line "completionHandler(response, #{response})"
           else
-            line "completionHandler(response, #{error})"
+            line 'completionHandler(response)'
           end
         end
       end

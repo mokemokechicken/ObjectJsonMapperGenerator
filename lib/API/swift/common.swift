@@ -101,6 +101,10 @@ public class YOUSEI_API_GENERATOR_PREFIX_Response {
         self.data = data
         self.error = error
     }
+
+    public func errorInfo<ET: YOUSEI_ENTITY_PREFIX_EntityBase>() -> ET? {
+        return ET.fromData(data) as ET?
+    }
 }
 
 public class YOUSEI_API_GENERATOR_PREFIX_Base {
