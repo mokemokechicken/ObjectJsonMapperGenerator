@@ -136,7 +136,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
 
         switch(config.bodyFormat, object) {
         case (.FormURLEncoded, let x as YOUSEI_ENTITY_PREFIX_EntityBase):
-            let str = URLUtil.makeQueryString(x.toJsonDictionary() as [String:AnyObject])
+            let str = YOUSEI_API_GENERATOR_PREFIX_URLUtil.makeQueryString(x.toJsonDictionary() as [String:AnyObject])
             self.body = str.dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: false)
             
         case (.JSON, let x as YOUSEI_ENTITY_PREFIX_EntityBase):
@@ -158,7 +158,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
         if let x:AnyObject = query[key] {
             query.removeValueForKey(key)
             return path.stringByReplacingOccurrencesOfString(
-                "{\(key)}", withString: URLUtil.escape("\(x)"))
+                "{\(key)}", withString: YOUSEI_API_GENERATOR_PREFIX_URLUtil.escape("\(x)"))
         }
         return path
     }
@@ -173,7 +173,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
         
         // Add Encoded Query String
         let urlComponents = NSURLComponents(URL: apiRequest.request.URL!, resolvingAgainstBaseURL: true)!
-        let qs = URLUtil.makeQueryString(query)
+        let qs = YOUSEI_API_GENERATOR_PREFIX_URLUtil.makeQueryString(query)
         if !qs.isEmpty {
             urlComponents.percentEncodedQuery = (urlComponents.percentEncodedQuery != nil ? urlComponents.percentEncodedQuery! + "&" : "") + qs
             apiRequest.request.URL = urlComponents.URL
@@ -207,7 +207,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
 }
 
 ///////////////////// Begin https://github.com/Alamofire/Alamofire/blob/master/Source/Alamofire.swift
-private class URLUtil {
+class YOUSEI_API_GENERATOR_PREFIX_URLUtil {
     class func makeQueryString(parameters: [String: AnyObject]) -> String {
         var components: [(String, String)] = []
         for key in sorted(Array(parameters.keys), <) {

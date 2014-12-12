@@ -30,11 +30,21 @@ module Yousei::DataServiceGenerator
       include Yousei::Swift
       include Yousei::APIGenerator::Swift::Util
 
+      def initialize(opts={})
+        super opts
+        @ext = 'swift'
+        @writer.register_hook_open_new_file do |info|
+          line 'import Foundation'
+          new_line
+        end
+      end
+
       # @param [Hash] definitions
       def generate(definitions, opts=nil)
         enable_swift_feature
         super definitions, opts
         @api_def = create_api(definitions, opts)
+        @ext = 'swift'
         new_line
         create_data_service(prefix: @data_service_prefix)
       end
@@ -51,8 +61,12 @@ module Yousei::DataServiceGenerator
 
       def create_data_service(opts)
         @ds_class_prefix = opts[:prefix]
+
+        @writer.change_filename "#{ds_class :Common}.#{@ext}"
         output_ds_base_script(@ds_class_prefix, @api_class_prefix, @entity_class_prefix)
         new_line
+
+        @writer.change_filename "#{ds_class :Locator}.#{@ext}"
         create_service_locator @api_def
 
         create_data_service_class_all @api_def
@@ -84,7 +98,7 @@ module Yousei::DataServiceGenerator
 
       def create_data_service_class_all(api_def)
         api_def.each do |api_name, api_attrs|
-          new_line
+          @writer.change_filename "#{ds_class api_name}.#{@ext}"
           create_data_service_class api_name, api_attrs
         end
       end
@@ -140,7 +154,7 @@ module Yousei::DataServiceGenerator
           optional_param_list.each do |var|
             line "if let x = #{var.code_name} { params[\"#{var.ident}\"] = x }"
           end
-          line 'return URLUtil.makeQueryString(params)'
+          line "return #{api_class :URLUtil}.makeQueryString(params)"
         end
       end
 
