@@ -23,7 +23,7 @@ module Yousei::OJMGenerator
         # dpp definitions
         definitions = customize_definitions definitions
         definitions.each do |class_name, attrs|
-          @writer.change_filename "#{entity_class class_name}.#{@ext}", @sub_dir
+          @writer.change_filename "#{class_name}.#{@ext}", @sub_dir
           create_class(class_name, attrs)
           outputln
         end
