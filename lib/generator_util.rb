@@ -27,6 +27,11 @@ module Yousei
       @writer.print s.to_s
     end
 
+    def change_filename(new_filename, new_dir=nil)
+      @writer.change_filename(new_filename, new_dir)
+    end
+
+
     def output(s)
       if s.kind_of? Array
         s.each do |line|

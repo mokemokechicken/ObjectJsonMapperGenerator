@@ -98,7 +98,7 @@ module Yousei::Swift
     end
 
     def to_required_hash_with(variable_expression, value_expression)
-      "#{variable_expression} = encode(#{value_expression})"
+      "#{variable_expression} = self.encodeObject(#{value_expression})"
     end
 
     def to_value_from(variable_expression, value_expression)
@@ -125,7 +125,7 @@ module Yousei::Swift
     end
 
     def from_data_expression(value_expression)
-      "JsonGenObjectFromJsonData(#{value_expression})"
+      "self.jsonGenObjectFromJsonData(#{value_expression})"
     end
   end
 
@@ -153,7 +153,7 @@ module Yousei::Swift
     end
 
     def to_required_hash_with(variable_expression, value_expression)
-      "#{variable_expression} = #{value_expression}.map {x in encode(x)}"
+      "#{variable_expression} = encodeObject(#{value_expression})"
     end
 
     def to_optional_value_from(variable_expression, value_expression)

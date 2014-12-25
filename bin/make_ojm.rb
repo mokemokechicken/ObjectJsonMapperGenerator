@@ -16,6 +16,7 @@ opt.on('-l language', %w(ruby swift), 'ruby|swift') {|v| params[:language] = v }
 opt.on('-t type', %w(json api ds), 'json|api|ds') {|v| params[:type] = v }
 opt.on('-n [namespace]', 'Specify Namespace of OJM codes') {|v| params[:namespace] = v }
 opt.on('-o [output filename]', 'Specify output filename.') {|v| params[:output] = v }
+opt.on('-d [output dir]', 'Specify output dir.') {|v| params[:dir] = v }
 
 opt.parse!(ARGV)
 
@@ -29,10 +30,12 @@ end
 
 hash = YAML.load(File.read(config_file))
 out =
-  if params[:output]
-    File.open(params[:output], 'w')
+  if params[:dir]
+    Yousei::DirFileWriter.new(dir: params[:dir])
+  elsif params[:output]
+    Yousei::FileWriter.new(filename: params[:output])
   else
-    STDOUT
+    Yousei::IOWriter.new(io: STDOUT)
   end
 
 debug_output =

@@ -8,19 +8,22 @@ module Yousei::OJMGenerator
     def initialize(opts={})
       initialize_formatter opts
       @indent_width = 4
+      @ext = 'txt'
+      @sub_dir = 'entity'
     end
 
     # @param [Hash] def_hash
     def generate(def_hash, opts = {})
       with_namespace opts[:namespace] do
-        output_include
-        new_line
+        @writer.change_filename "#{entity_class :Common}.#{@ext}", @sub_dir
         output_common_functions
+
         # dpp def_hash
         definitions = replace_anonymous def_hash
         # dpp definitions
         definitions = customize_definitions definitions
         definitions.each do |class_name, attrs|
+          @writer.change_filename "#{entity_class class_name}.#{@ext}", @sub_dir
           create_class(class_name, attrs)
           outputln
         end
@@ -35,7 +38,6 @@ module Yousei::OJMGenerator
     end
 
     def output_common_functions
-      outputln '// Override output_common_functions methods! for output Common Functions'
     end
 
     # @param [Hash] definitions

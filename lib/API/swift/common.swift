@@ -1,17 +1,3 @@
-private func try<T>(x: T?, handler: (T) -> Void) {
-    if let xx = x {
-        handler(xx)
-    }
-}
-
-private func try<T>(x: T?, handler: (T) -> Any?) -> Any? {
-    if let xx = x {
-        return handler(xx)
-    }
-    return nil
-}
-
-
 public enum YOUSEI_API_GENERATOR_PREFIX_BodyFormat {
     case JSON, FormURLEncoded
 }
@@ -47,7 +33,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Config : YOUSEI_API_GENERATOR_PREFIX_Co
     
     public func configureRequest(apiRequest: YOUSEI_API_GENERATOR_PREFIX_Request) {
         apiRequest.request.setValue("gzip;q=1.0,compress;q=0.5", forHTTPHeaderField: "Accept-Encoding")
-        try(userAgent) { ua in apiRequest.request.setValue(ua, forHTTPHeaderField: "User-Agent") }
+        if let ua = userAgent { apiRequest.request.setValue(ua, forHTTPHeaderField: "User-Agent") }
     }
     
     public func beforeRequest(apiRequest: YOUSEI_API_GENERATOR_PREFIX_Request) {
@@ -100,6 +86,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Request {
     
     public init(info: YOUSEI_API_GENERATOR_PREFIX_Info) {
         self.info = info
+        self.request.HTTPMethod = info.method.rawValue
     }
 }
 
@@ -114,6 +101,15 @@ public class YOUSEI_API_GENERATOR_PREFIX_Response {
         self.response = response
         self.data = data
         self.error = error
+    }
+
+    public func statusCode() -> Int {
+        return response?.statusCode ?? -1
+    }
+
+    public func isStatus2xx() -> Bool {
+        let s = statusCode()
+        return 200 <= s && s < 300
     }
 }
 
@@ -131,7 +127,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
         self.apiRequest = YOUSEI_API_GENERATOR_PREFIX_Request(info: info)
     }
     
-    func setBody(object: AnyObject) {
+    func setupBody(object: AnyObject) {
         // set body if needed
         let method = apiRequest.info.method
         if !(method == .POST || method == .PUT || method == .PATCH) {
@@ -140,7 +136,7 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
 
         switch(config.bodyFormat, object) {
         case (.FormURLEncoded, let x as YOUSEI_ENTITY_PREFIX_EntityBase):
-            let str = URLUtil.makeQueryString(x.toJsonDictionary() as [String:AnyObject])
+            let str = YOUSEI_API_GENERATOR_PREFIX_URLUtil.makeQueryString(x.toJsonDictionary() as [String:AnyObject])
             self.body = str.dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: false)
             
         case (.JSON, let x as YOUSEI_ENTITY_PREFIX_EntityBase):
@@ -162,13 +158,13 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
         if let x:AnyObject = query[key] {
             query.removeValueForKey(key)
             return path.stringByReplacingOccurrencesOfString(
-                "{\(key)}", withString: URLUtil.escape("\(x)"))
+                "{\(key)}", withString: YOUSEI_API_GENERATOR_PREFIX_URLUtil.escape("\(x)"))
         }
         return path
     }
     
     func doRequest(object: AnyObject, completionHandler: CompletionHandler) {
-        setBody(object)
+        setupBody(object)
         doRequest(completionHandler)
     }
     
@@ -177,30 +173,41 @@ public class YOUSEI_API_GENERATOR_PREFIX_Base {
         
         // Add Encoded Query String
         let urlComponents = NSURLComponents(URL: apiRequest.request.URL!, resolvingAgainstBaseURL: true)!
-        let qs = URLUtil.makeQueryString(query)
+        let qs = YOUSEI_API_GENERATOR_PREFIX_URLUtil.makeQueryString(query)
         if !qs.isEmpty {
             urlComponents.percentEncodedQuery = (urlComponents.percentEncodedQuery != nil ? urlComponents.percentEncodedQuery! + "&" : "") + qs
             apiRequest.request.URL = urlComponents.URL
         }
         
-        config.log("Request URL: \(apiRequest.request.URL?.absoluteString)")
-        
+        config.log("Request: \(apiRequest.request.HTTPMethod) \(apiRequest.request.URL?.absoluteString)")
+        self.config.beforeRequest(self.apiRequest)
+
         dispatch_async(config.queue) {
-            self.config.beforeRequest(self.apiRequest)
             var response: NSURLResponse?
             var error: NSError?
             var data = NSURLConnection.sendSynchronousRequest(self.apiRequest.request, returningResponse: &response, error: &error)
             var apiResponse = YOUSEI_API_GENERATOR_PREFIX_Response(request: self.apiRequest, response: response as? NSHTTPURLResponse, data: data, error: error)
-            self.config.afterResponse(apiResponse)
             dispatch_async(self.handlerQueue ?? dispatch_get_main_queue()) { // Thread周りは微妙。どうするといいだろう。
+                self.config.afterResponse(apiResponse)
+                if let e = apiResponse.error {
+                    self.config.log(e.description)
+                    if let d = data {
+                        var responseBody = NSString(data: d, encoding: NSUTF8StringEncoding) ?? "Response is not UTF8Encoding"
+                        self.config.log("RESPONSE(\(d.length) bytes): \(responseBody)")
+                    }
+                }
                 completionHandler(apiResponse)
             }
         }
     }
+
+    func jsonGenObjectFromJsonData(data: NSData!) -> AnyObject? {
+        return YOUSEI_ENTITY_PREFIX_JsonGenObjectFromJsonData(data)
+    }
 }
 
 ///////////////////// Begin https://github.com/Alamofire/Alamofire/blob/master/Source/Alamofire.swift
-private class URLUtil {
+class YOUSEI_API_GENERATOR_PREFIX_URLUtil {
     class func makeQueryString(parameters: [String: AnyObject]) -> String {
         var components: [(String, String)] = []
         for key in sorted(Array(parameters.keys), <) {

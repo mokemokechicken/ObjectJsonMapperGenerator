@@ -1,5 +1,6 @@
 # coding: utf-8
 
+require_relative 'file_writer'
 require_relative 'generator_util'
 require_relative 'swift_util'
 

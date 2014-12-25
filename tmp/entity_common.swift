@@ -1,33 +1,35 @@
-private func _encodeObject(obj: [AnyObject?]) -> [AnyObject] {
-    var ary = [AnyObject]()
-    for o in obj {
-        ary.append(_encodeObject(o))
-    }
-    return ary
-}
-
-private func _encodeObject(obj: AnyObject?) -> AnyObject {
+import Foundation
+private func encode(obj: AnyObject?) -> AnyObject {
     switch obj {
     case nil:
         return NSNull()
-
-    case let ojmObject as YOUSEI_ENTITY_PREFIX_EntityBase:
+        
+    case let ojmObject as EntityBase:
         return ojmObject.toJsonDictionary()
-
+        
     default:
         return obj!
     }
 }
 
-func YOUSEI_ENTITY_PREFIX_JsonGenObjectFromJsonData(data: NSData!) -> AnyObject? {
+private func decodeOptional(obj: AnyObject?) -> AnyObject? {
+    switch obj {
+    case let x as NSNull:
+        return nil
+    
+    default:
+        return obj
+    }
+}
+
+private func JsonGenObjectFromJsonData(data: NSData!) -> AnyObject? {
     if data == nil {
         return nil
     }
     return NSJSONSerialization.JSONObjectWithData(data, options:NSJSONReadingOptions.MutableContainers, error: nil)
 }
 
-
-public class YOUSEI_ENTITY_PREFIX_EntityBase {
+public class EntityBase {
     public init() {
     }
 
@@ -35,21 +37,21 @@ public class YOUSEI_ENTITY_PREFIX_EntityBase {
         return NSDictionary()
     }
 
-    public class func toJsonArray(entityList: [YOUSEI_ENTITY_PREFIX_EntityBase]) -> NSArray {
-        return _encodeObject(entityList)
+    public class func toJsonArray(entityList: [EntityBase]) -> NSArray {
+        return entityList.map {x in encode(x)}
     }
 
-    public class func toJsonData(entityList: [YOUSEI_ENTITY_PREFIX_EntityBase], pretty: Bool = false) -> NSData {
+    public class func toJsonData(entityList: [EntityBase], pretty: Bool = false) -> NSData {
         var obj = toJsonArray(entityList)
         return toJson(obj, pretty: pretty)
     }
 
     public func toJsonData(pretty: Bool = false) -> NSData {
         var obj = toJsonDictionary()
-        return YOUSEI_ENTITY_PREFIX_EntityBase.toJson(obj, pretty: pretty)
+        return EntityBase.toJson(obj, pretty: pretty)
     }
 
-    public class func toJsonString(entityList: [YOUSEI_ENTITY_PREFIX_EntityBase], pretty: Bool = false) -> NSString {
+    public class func toJsonString(entityList: [EntityBase], pretty: Bool = false) -> NSString {
         return NSString(data: toJsonData(entityList, pretty: pretty), encoding: NSUTF8StringEncoding)!
     }
 
@@ -58,7 +60,7 @@ public class YOUSEI_ENTITY_PREFIX_EntityBase {
     }
 
     public class func fromData(data: NSData!) -> AnyObject? {
-        var object:AnyObject? = YOUSEI_ENTITY_PREFIX_JsonGenObjectFromJsonData(data)
+        var object:AnyObject? = JsonGenObjectFromJsonData(data)
         switch object {
         case let hash as NSDictionary:
             return fromJsonDictionary(hash)
@@ -71,15 +73,15 @@ public class YOUSEI_ENTITY_PREFIX_EntityBase {
         }
     }
 
-    public class func fromJsonDictionary(hash: NSDictionary?) -> YOUSEI_ENTITY_PREFIX_EntityBase? {
+    public class func fromJsonDictionary(hash: NSDictionary?) -> EntityBase? {
         return nil
     }
 
-    public class func fromJsonArray(array: NSArray?) -> [YOUSEI_ENTITY_PREFIX_EntityBase]? {
+    public class func fromJsonArray(array: NSArray?) -> [EntityBase]? {
         if array == nil {
             return nil
         }
-        var ret = [YOUSEI_ENTITY_PREFIX_EntityBase]()
+        var ret = [EntityBase]()
         if let xx = array as? [NSDictionary] {
             for x in xx {
                 if let obj = fromJsonDictionary(x) {
@@ -98,24 +100,5 @@ public class YOUSEI_ENTITY_PREFIX_EntityBase {
         let options = pretty ? NSJSONWritingOptions.PrettyPrinted : NSJSONWritingOptions.allZeros
         return NSJSONSerialization.dataWithJSONObject(obj, options: options, error: nil)!
     }
-
-    func encodeObject(obj: [AnyObject?]) -> [AnyObject] {
-        return _encodeObject(obj)
-    }
-
-    func encodeObject(obj: AnyObject?) -> AnyObject {
-        return _encodeObject(obj)
-    }
-
-
-    func decodeOptional(obj: AnyObject?) -> AnyObject? {
-        switch obj {
-        case let x as NSNull:
-            return nil
-
-        default:
-            return obj
-        }
-    }
-
 }
+

@@ -1,5 +1,5 @@
 public class TEMPLATE_YOUSEI_DS_PREFIX_<ET> {
-    public typealias NotificationHandler = (ET?, TEMPLATE_YOUSEI_DS_PREFIX_Status?) -> Void
+    public typealias NotificationHandler = (ET?, TEMPLATE_YOUSEI_DS_PREFIX_Status) -> Void
     public var requestedObjectConverter: ET? -> ET? = { $0 }
 
     let factory: YOUSEI_API_GENERATOR_PREFIX_Factory
@@ -18,7 +18,7 @@ public class TEMPLATE_YOUSEI_DS_PREFIX_<ET> {
         observers = observers.filter { $0.0 !== object}
     }
 
-    private func notify(data: ET?, status: TEMPLATE_YOUSEI_DS_PREFIX_Status) {
+    func notify(data: ET?, status: TEMPLATE_YOUSEI_DS_PREFIX_Status) {
         factory.config.log("\(self) notify")
         for observer in observers {
             observer.1(data, status)
@@ -28,11 +28,11 @@ public class TEMPLATE_YOUSEI_DS_PREFIX_<ET> {
     private var cache = [String:Any]()
     public var enableCache = true
 
-    private func findInCache(key: String) -> Any? {
+    func findInCache(key: String) -> Any? {
         return self.cache[key]
     }
 
-    private func storeInCache(key:String, object: Any?) {
+    func storeInCache(key:String, object: Any?) {
         if let o = object {
             if enableCache {
                 self.cache[key] = o

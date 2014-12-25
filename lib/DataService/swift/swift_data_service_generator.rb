@@ -30,11 +30,22 @@ module Yousei::DataServiceGenerator
       include Yousei::Swift
       include Yousei::APIGenerator::Swift::Util
 
+      def initialize(opts={})
+        super opts
+        @ext = 'swift'
+        @sub_dir = 'data_service'
+        @writer.register_hook_open_new_file do |info|
+          line 'import Foundation'
+          new_line
+        end
+      end
+
       # @param [Hash] definitions
       def generate(definitions, opts=nil)
         enable_swift_feature
         super definitions, opts
         @api_def = create_api(definitions, opts)
+        @ext = 'swift'
         new_line
         create_data_service(prefix: @data_service_prefix)
       end
@@ -51,8 +62,12 @@ module Yousei::DataServiceGenerator
 
       def create_data_service(opts)
         @ds_class_prefix = opts[:prefix]
+
+        @writer.change_filename "#{ds_class :Common}.#{@ext}", @sub_dir
         output_ds_base_script(@ds_class_prefix, @api_class_prefix, @entity_class_prefix)
         new_line
+
+        @writer.change_filename "#{ds_class :Locator}.#{@ext}", @sub_dir
         create_service_locator @api_def
 
         create_data_service_class_all @api_def
@@ -84,20 +99,21 @@ module Yousei::DataServiceGenerator
 
       def create_data_service_class_all(api_def)
         api_def.each do |api_name, api_attrs|
-          new_line
+          @writer.change_filename "#{ds_class api_name}.#{@ext}", @sub_dir
           create_data_service_class api_name, api_attrs
         end
       end
 
       def rvar_or_nsnull(api_attrs)
-        rvar, _ = rvar_and_handler_type api_attrs
-        rvar || SwiftVariable::create_variable('rvar', 'NSNull')
+        info = api_response_info api_attrs
+        info[:response_var] || SwiftVariable::create_variable('rvar', 'NSNull')
       end
 
       def create_data_service_class(api_name, api_attrs)
         rvar = rvar_or_nsnull api_attrs
-        line "public class #{ds_class api_name}<ET> : #{ds_class ''}<ET> {" do
-          line "public typealias ET = #{rvar.type_expression}"
+        line "public class #{ds_class api_name}<DataType> : #{ds_class ''}<DataType> {" do
+          line "public typealias DataType = #{rvar.type_expression}"
+          create_type_aliases api_name, api_attrs
           new_line
           create_func_init api_attrs
           new_line
@@ -106,7 +122,15 @@ module Yousei::DataServiceGenerator
           create_func_data api_attrs
           new_line
           create_func_request api_name, api_attrs
+          new_line
+          create_func_fetch_parse_error api_name, api_attrs
         end
+      end
+
+      def create_type_aliases(api_name, api_attrs)
+        info = api_response_info api_attrs
+        line "public typealias ErrorType = #{info[:error_var].type_expression}"  if info[:error_var]
+        line "public typealias BodyType = #{api_class api_name}.BodyType"  if info[:body_var]
       end
 
       def create_func_init(api_attrs)
@@ -131,17 +155,18 @@ module Yousei::DataServiceGenerator
           optional_param_list.each do |var|
             line "if let x = #{var.code_name} { params[\"#{var.ident}\"] = x }"
           end
-          line 'return URLUtil.makeQueryString(params)'
+          line "return #{api_class :URLUtil}.makeQueryString(params)"
         end
       end
 
       def create_func_data(api_attrs)
+        rvar = rvar_or_nsnull api_attrs
         call_args = make_call_args_expression api_attrs
         args_expression, _, _ = make_args_list api_attrs
 
-        line "public func data(#{args_expression}) -> ET? {" do
+        line "public func data(#{args_expression}) -> #{rvar.type_expression}? {" do
           line "let key = cacheKeyFor(#{call_args})"
-          line 'return findInCache(key) as? ET'
+          line "return findInCache(key) as? #{rvar.type_expression}"
         end
       end
 
@@ -157,7 +182,8 @@ module Yousei::DataServiceGenerator
           args_expression = make_arg_expression([bvar] + required_param_list, optional_param_list)[1..-1]
         end
 
-        rvar, _ = rvar_and_handler_type api_attrs
+        info = api_response_info api_attrs
+        rvar = info[:response_var]
         line "public func request(#{args_expression}) {" do
           call_expression = body_needed ?  "call(#{bvar.code_name})" : 'call'
           callback = rvar ? 'res, o' : 'res'
@@ -172,6 +198,15 @@ module Yousei::DataServiceGenerator
             else
               line "self.notify(nil, status: #{ds_class :Status}(response: res))"
             end
+          end
+        end
+      end
+
+      def create_func_fetch_parse_error(api_name, api_attrs)
+        info = api_response_info api_attrs
+        if info[:error_var]
+          line "public func fetchParseError(status: #{ds_class :Status}) -> #{info[:error_var].type_expression}? {" do
+            line "return #{api_class api_name}.errorInfo(status.response)"
           end
         end
       end
