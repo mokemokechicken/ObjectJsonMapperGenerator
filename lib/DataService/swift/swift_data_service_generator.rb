@@ -33,6 +33,7 @@ module Yousei::DataServiceGenerator
       def initialize(opts={})
         super opts
         @ext = 'swift'
+        @sub_dir = 'data_service'
         @writer.register_hook_open_new_file do |info|
           line 'import Foundation'
           new_line
@@ -62,11 +63,11 @@ module Yousei::DataServiceGenerator
       def create_data_service(opts)
         @ds_class_prefix = opts[:prefix]
 
-        @writer.change_filename "#{ds_class :Common}.#{@ext}"
+        @writer.change_filename "#{ds_class :Common}.#{@ext}", @sub_dir
         output_ds_base_script(@ds_class_prefix, @api_class_prefix, @entity_class_prefix)
         new_line
 
-        @writer.change_filename "#{ds_class :Locator}.#{@ext}"
+        @writer.change_filename "#{ds_class :Locator}.#{@ext}", @sub_dir
         create_service_locator @api_def
 
         create_data_service_class_all @api_def
@@ -98,7 +99,7 @@ module Yousei::DataServiceGenerator
 
       def create_data_service_class_all(api_def)
         api_def.each do |api_name, api_attrs|
-          @writer.change_filename "#{ds_class api_name}.#{@ext}"
+          @writer.change_filename "#{ds_class api_name}.#{@ext}", @sub_dir
           create_data_service_class api_name, api_attrs
         end
       end

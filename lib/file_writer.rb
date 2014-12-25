@@ -41,12 +41,14 @@ module Yousei
       super(opts)
       @opened = []
       @dir = opts[:dir]
+      @sub_dir = nil
       @filename = opts[:filename] || 'yousei'
     end
 
-    def change_filename(new_filename, new_dir=nil)
-      @dir = new_dir if new_dir
+    def change_filename(new_filename, sub_dir=nil)
+      @sub_dir = sub_dir
       @filename = new_filename
+      Dir.mkdir write_dir unless Dir.exist? write_dir
       setup_writer
     end
 
@@ -55,7 +57,7 @@ module Yousei
     def setup_writer
       @writer.close if @writer && !@writer.closed?
       @writer = File.open(abs_path, is_new? ? 'w' : 'a')
-      fire_after_open_new_file(dir: @dir, filename: @filename, abs_path: abs_path)  if is_new?
+      fire_after_open_new_file(dir: write_dir, filename: @filename, abs_path: abs_path)  if is_new?
       add_opened abs_path
     end
 
@@ -69,8 +71,12 @@ module Yousei
       !(@opened.include? abs_path)
     end
 
+    def write_dir
+      "#{@dir}/#{@sub_dir}"
+    end
+
     def abs_path
-      File.absolute_path(@filename, @dir)
+      File.absolute_path(@filename, write_dir)
     end
   end
 end

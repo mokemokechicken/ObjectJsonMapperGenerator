@@ -9,12 +9,13 @@ module Yousei::OJMGenerator
       initialize_formatter opts
       @indent_width = 4
       @ext = 'txt'
+      @sub_dir = 'entity'
     end
 
     # @param [Hash] def_hash
     def generate(def_hash, opts = {})
       with_namespace opts[:namespace] do
-        @writer.change_filename "#{entity_class :Common}.#{@ext}"
+        @writer.change_filename "#{entity_class :Common}.#{@ext}", @sub_dir
         output_common_functions
 
         # dpp def_hash
@@ -22,7 +23,7 @@ module Yousei::OJMGenerator
         # dpp definitions
         definitions = customize_definitions definitions
         definitions.each do |class_name, attrs|
-          @writer.change_filename "#{entity_class class_name}.#{@ext}"
+          @writer.change_filename "#{entity_class class_name}.#{@ext}", @sub_dir
           create_class(class_name, attrs)
           outputln
         end

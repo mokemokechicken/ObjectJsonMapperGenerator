@@ -103,6 +103,7 @@ module Yousei::APIGenerator
       def initialize(opts={})
         super opts
         @ext = 'swift'
+        @sub_dir = 'api'
         @writer.register_hook_open_new_file do |info|
           line 'import Foundation'
           new_line
@@ -141,14 +142,14 @@ module Yousei::APIGenerator
 
         api_def = opts[:def]
 
-        @writer.change_filename "#{api_class :Common}.#{@ext}"
+        @writer.change_filename "#{api_class :Common}.#{@ext}", @sub_dir
         output_api_base_script(@api_class_prefix, @entity_class_prefix)
 
-        @writer.change_filename "#{api_class :Factory}.#{@ext}"
+        @writer.change_filename "#{api_class :Factory}.#{@ext}", @sub_dir
         create_factory api_def
         @definitions_after_create = {}
         api_def.each do |api_name, api_attrs|
-          @writer.change_filename "#{api_class api_name}.#{@ext}"
+          @writer.change_filename "#{api_class api_name}.#{@ext}", @sub_dir
           @definitions_after_create[api_name] = create_api_class api_name, api_attrs
         end
       end
